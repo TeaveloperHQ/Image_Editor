@@ -2,9 +2,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="520"
+        mc:Ignorable="d" d:DesignWidth="940" d:DesignHeight="660"
         x:Class="ImageEditor.App.MainWindow"
-        Width="700" Height="520"
+        Width="940" Height="660"
         Title="Image / PDF Editor">
 
     <Window.Styles>
@@ -34,7 +34,7 @@
                 <StackPanel Margin="16" Spacing="12">
                     <StackPanel Classes="row">
                         <TextBlock Classes="label" Text="이미지 파일" />
-                        <TextBox x:Name="ImgInput" Width="380" IsReadOnly="True" PlaceholderText="파일을 선택하세요" />
+                        <TextBox x:Name="ImgInput" Width="380" IsReadOnly="True" Watermark="파일을 선택하세요" />
                         <Button Content="찾아보기…" Click="OnPickImage" />
                     </StackPanel>
 
@@ -85,7 +85,7 @@
                 <StackPanel Margin="16" Spacing="12">
                     <StackPanel Classes="row">
                         <TextBlock Classes="label" Text="PDF 파일" />
-                        <TextBox x:Name="SplitInput" Width="380" IsReadOnly="True" PlaceholderText="파일을 선택하세요" />
+                        <TextBox x:Name="SplitInput" Width="380" IsReadOnly="True" Watermark="파일을 선택하세요" />
                         <Button Content="찾아보기…" Click="OnPickSplitPdf" />
                     </StackPanel>
                     <TextBlock x:Name="SplitPageInfo" Foreground="#888" Text="" />
@@ -102,7 +102,7 @@
                             <TextBlock Text="② 특정 페이지만 추출" FontWeight="Bold" />
                             <StackPanel Classes="row">
                                 <TextBlock Classes="label" Text="페이지 범위" />
-                                <TextBox x:Name="ExtractRange" Width="220" PlaceholderText="예: 1-3,5,8-10" />
+                                <TextBox x:Name="ExtractRange" Width="220" Watermark="예: 1-3,5,8-10" />
                             </StackPanel>
                             <Button Content="추출하여 저장" Click="OnExtractPages" HorizontalAlignment="Left" />
                         </StackPanel>
@@ -115,7 +115,7 @@
                 <StackPanel Margin="16" Spacing="12">
                     <StackPanel Classes="row">
                         <TextBlock Classes="label" Text="PDF 파일" />
-                        <TextBox x:Name="PdfResizeInput" Width="380" IsReadOnly="True" PlaceholderText="파일을 선택하세요" />
+                        <TextBox x:Name="PdfResizeInput" Width="380" IsReadOnly="True" Watermark="파일을 선택하세요" />
                         <Button Content="찾아보기…" Click="OnPickResizePdf" />
                     </StackPanel>
                     <StackPanel Classes="row">
@@ -133,6 +133,96 @@
                                Text="* 모든 페이지 내용을 선택한 용지 크기에 맞춰 다시 그립니다." />
                     <Button Classes="run" Content="크기 변경 후 저장" Click="OnResizePdf" />
                 </StackPanel>
+            </TabItem>
+
+            <!-- ========== 이미지 편집 ========== -->
+            <TabItem Header="이미지 편집">
+                <DockPanel Margin="8">
+
+                    <!-- 우측 도구 패널 -->
+                    <ScrollViewer DockPanel.Dock="Right" Width="250" Margin="8,0,0,0">
+                        <StackPanel Spacing="10">
+                            <StackPanel Classes="row">
+                                <Button Content="불러오기" Click="OnEditLoad" />
+                                <Button Content="저장…" Click="OnEditSave" />
+                            </StackPanel>
+
+                            <Separator />
+                            <TextBlock Text="회전 / 반전" FontWeight="Bold" />
+                            <StackPanel Classes="row">
+                                <Button Content="↺ 90°" Click="OnEditRotateLeft" />
+                                <Button Content="↻ 90°" Click="OnEditRotateRight" />
+                                <Button Content="좌우" Click="OnEditFlipH" />
+                                <Button Content="상하" Click="OnEditFlipV" />
+                            </StackPanel>
+
+                            <Separator />
+                            <TextBlock Text="작업 모드" FontWeight="Bold" />
+                            <StackPanel Classes="row">
+                                <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" IsChecked="True" />
+                                <RadioButton x:Name="ModeText" GroupName="EditMode" Content="텍스트" />
+                                <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" />
+                            </StackPanel>
+
+                            <!-- 자르기 -->
+                            <StackPanel Spacing="6" IsVisible="{Binding #ModeCrop.IsChecked}">
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="미리보기에서 드래그하여 영역을 선택한 뒤 아래 버튼을 누르세요." />
+                                <Button Content="선택 영역 자르기" Click="OnEditCrop" />
+                            </StackPanel>
+
+                            <!-- 텍스트 -->
+                            <StackPanel Spacing="6" IsVisible="{Binding #ModeText.IsChecked}">
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="내용·서식을 정하고 미리보기를 클릭하면 그 위치에 글자가 들어갑니다." />
+                                <TextBox x:Name="TextContent" Watermark="넣을 텍스트" Text="텍스트" />
+                                <StackPanel Classes="row">
+                                    <ComboBox x:Name="FontCombo" Width="150" />
+                                    <Button Content="폰트 추가…" Click="OnAddFont" />
+                                </StackPanel>
+                                <StackPanel Classes="row">
+                                    <TextBlock Text="크기" VerticalAlignment="Center" />
+                                    <TextBox x:Name="TextSize" Width="60" Text="32" />
+                                    <TextBlock Text="색상" VerticalAlignment="Center" />
+                                    <TextBox x:Name="TextColor" Width="90" Text="#FF0000" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- 그림 -->
+                            <StackPanel Spacing="6" IsVisible="{Binding #ModeImage.IsChecked}">
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="얹을 이미지를 고르고 미리보기를 클릭하면 그 위치에 들어갑니다. (크기 0=원본)" />
+                                <Button Content="이미지 선택…" Click="OnPickOverlay" />
+                                <TextBlock x:Name="OverlayName" Foreground="#888" Text="(선택 안 됨)" />
+                                <StackPanel Classes="row">
+                                    <TextBlock Text="너비" VerticalAlignment="Center" />
+                                    <TextBox x:Name="OverlayW" Width="60" Text="0" />
+                                    <TextBlock Text="높이" VerticalAlignment="Center" />
+                                    <TextBox x:Name="OverlayH" Width="60" Text="0" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Separator />
+                            <TextBlock x:Name="EditInfo" Foreground="#888" Text="이미지를 불러오세요." TextWrapping="Wrap" />
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- 미리보기 -->
+                    <Border Background="#252525" CornerRadius="4">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                            <Canvas x:Name="EditCanvas" Background="Transparent"
+                                    PointerPressed="OnCanvasPressed"
+                                    PointerMoved="OnCanvasMoved"
+                                    PointerReleased="OnCanvasReleased">
+                                <Image x:Name="EditImage" Canvas.Left="0" Canvas.Top="0" />
+                                <Rectangle x:Name="CropRect" IsVisible="False"
+                                           Stroke="#00B4FF" StrokeThickness="1.5"
+                                           StrokeDashArray="4,3" Fill="#3300B4FF" />
+                            </Canvas>
+                        </ScrollViewer>
+                    </Border>
+
+                </DockPanel>
             </TabItem>
 
         </TabControl>

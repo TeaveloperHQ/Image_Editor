@@ -5,7 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using ImageEditor.Core;
 using PdfSharp;
@@ -23,12 +25,26 @@ public partial class MainWindow : Window
         Patterns = new[] { "*.pdf" }
     };
 
+    private static readonly FilePickerFileType FontType = new("폰트 파일")
+    {
+        Patterns = new[] { "*.ttf", "*.otf", "*.ttc" }
+    };
+
     private readonly ObservableCollection<string> _mergeFiles = new();
+
+    // 이미지 편집 상태
+    private readonly FontCatalog _fonts = new();
+    private ImageEditSession? _session;
+    private double _displayScale = 1.0;
+    private string? _overlayPath;
+    private Avalonia.Point _cropStart;
+    private bool _dragging;
 
     public MainWindow()
     {
         InitializeComponent();
         MergeList.ItemsSource = _mergeFiles;
+        ReloadFontCombo(null);
     }
 
     // ---------- 공통 헬퍼 ----------
@@ -239,6 +255,181 @@ public partial class MainWindow : Window
             var keep = PdfKeepAspect.IsChecked == true;
             await Task.Run(() => PdfService.ResizePages(input, output, pageSize, keep));
             SetStatus($"완료: {output}");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    // ---------- 이미지 편집 ----------
+
+    private void ReloadFontCombo(string? select)
+    {
+        var names = _fonts.FamilyNames();
+        FontCombo.ItemsSource = names;
+        var target = select ?? _fonts.Resolve(null).Name;
+        FontCombo.SelectedItem = names.Contains(target) ? target : names.FirstOrDefault();
+    }
+
+    private void RefreshPreview()
+    {
+        if (_session is null) return;
+
+        using var ms = new MemoryStream(_session.ToPngBytes());
+        EditImage.Source = new Bitmap(ms);
+
+        const double maxW = 660, maxH = 540;
+        _displayScale = Math.Min(1.0, Math.Min(maxW / _session.Width, maxH / _session.Height));
+        var dw = _session.Width * _displayScale;
+        var dh = _session.Height * _displayScale;
+        EditImage.Width = dw;
+        EditImage.Height = dh;
+        EditCanvas.Width = dw;
+        EditCanvas.Height = dh;
+        CropRect.IsVisible = false;
+        EditInfo.Text = $"{_session.Width} × {_session.Height} px";
+    }
+
+    private (int X, int Y) ToImage(Avalonia.Point p) =>
+        ((int)(p.X / _displayScale), (int)(p.Y / _displayScale));
+
+    private async void OnEditLoad(object? sender, RoutedEventArgs e)
+    {
+        var path = await PickOpenFileAsync("편집할 이미지 선택", ImageType);
+        if (path is null) return;
+        try
+        {
+            _session?.Dispose();
+            _session = ImageEditSession.Load(path);
+            RefreshPreview();
+            SetStatus($"불러옴: {path}");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private async void OnEditSave(object? sender, RoutedEventArgs e)
+    {
+        if (_session is null) { SetError("저장할 이미지가 없습니다."); return; }
+        var output = await PickSaveFileAsync("편집 결과 저장", "edited.png", ImageType);
+        if (output is null) return;
+        try { _session.Save(output); SetStatus($"저장: {output}"); }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private void OnEditRotateLeft(object? sender, RoutedEventArgs e) => EditOp(s => s.RotateLeft());
+    private void OnEditRotateRight(object? sender, RoutedEventArgs e) => EditOp(s => s.RotateRight());
+    private void OnEditFlipH(object? sender, RoutedEventArgs e) => EditOp(s => s.FlipHorizontal());
+    private void OnEditFlipV(object? sender, RoutedEventArgs e) => EditOp(s => s.FlipVertical());
+
+    private void EditOp(Action<ImageEditSession> op)
+    {
+        if (_session is null) { SetError("이미지를 먼저 불러오세요."); return; }
+        try { op(_session); RefreshPreview(); }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private void OnEditCrop(object? sender, RoutedEventArgs e)
+    {
+        if (_session is null) { SetError("이미지를 먼저 불러오세요."); return; }
+        if (!CropRect.IsVisible || CropRect.Width < 2 || CropRect.Height < 2)
+        { SetError("미리보기에서 영역을 드래그한 뒤 누르세요."); return; }
+
+        var x = (int)(Canvas.GetLeft(CropRect) / _displayScale);
+        var y = (int)(Canvas.GetTop(CropRect) / _displayScale);
+        var w = (int)(CropRect.Width / _displayScale);
+        var h = (int)(CropRect.Height / _displayScale);
+        try
+        {
+            _session.Crop(new SixLabors.ImageSharp.Rectangle(x, y, w, h));
+            RefreshPreview();
+            SetStatus("자르기 완료");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private async void OnAddFont(object? sender, RoutedEventArgs e)
+    {
+        var path = await PickOpenFileAsync("폰트 파일 선택", FontType);
+        if (path is null) return;
+        try
+        {
+            var name = _fonts.AddFontFile(path);
+            ReloadFontCombo(name);
+            SetStatus($"폰트 추가: {name}");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private async void OnPickOverlay(object? sender, RoutedEventArgs e)
+    {
+        var path = await PickOpenFileAsync("얹을 이미지 선택", ImageType);
+        if (path is null) return;
+        _overlayPath = path;
+        OverlayName.Text = Path.GetFileName(path);
+    }
+
+    // ----- 미리보기 포인터 -----
+
+    private void OnCanvasPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_session is null) return;
+        var p = e.GetPosition(EditCanvas);
+
+        if (ModeCrop.IsChecked == true)
+        {
+            _dragging = true;
+            _cropStart = p;
+            Canvas.SetLeft(CropRect, p.X);
+            Canvas.SetTop(CropRect, p.Y);
+            CropRect.Width = 0;
+            CropRect.Height = 0;
+            CropRect.IsVisible = true;
+        }
+        else if (ModeText.IsChecked == true) PlaceText(p);
+        else if (ModeImage.IsChecked == true) PlaceOverlay(p);
+    }
+
+    private void OnCanvasMoved(object? sender, PointerEventArgs e)
+    {
+        if (!_dragging || _session is null) return;
+        var p = e.GetPosition(EditCanvas);
+        Canvas.SetLeft(CropRect, Math.Min(p.X, _cropStart.X));
+        Canvas.SetTop(CropRect, Math.Min(p.Y, _cropStart.Y));
+        CropRect.Width = Math.Abs(p.X - _cropStart.X);
+        CropRect.Height = Math.Abs(p.Y - _cropStart.Y);
+    }
+
+    private void OnCanvasReleased(object? sender, PointerReleasedEventArgs e) => _dragging = false;
+
+    private void PlaceText(Avalonia.Point p)
+    {
+        if (_session is null) return;
+        var text = TextContent.Text ?? "";
+        if (string.IsNullOrEmpty(text)) { SetError("넣을 텍스트를 입력하세요."); return; }
+        if (!float.TryParse(TextSize.Text, out var size) || size <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
+        if (!SixLabors.ImageSharp.Color.TryParseHex(TextColor.Text ?? "#000000", out var color))
+            color = SixLabors.ImageSharp.Color.Black;
+        try
+        {
+            var family = _fonts.Resolve(FontCombo.SelectedItem as string);
+            var (ix, iy) = ToImage(p);
+            _session.AddText(text, family, size, color, ix, iy);
+            RefreshPreview();
+            SetStatus($"텍스트 추가 @ ({ix},{iy})");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private void PlaceOverlay(Avalonia.Point p)
+    {
+        if (_session is null) return;
+        if (_overlayPath is null) { SetError("먼저 얹을 이미지를 선택하세요."); return; }
+        int.TryParse(OverlayW.Text, out var w);
+        int.TryParse(OverlayH.Text, out var h);
+        try
+        {
+            var (ix, iy) = ToImage(p);
+            _session.AddImage(_overlayPath, ix, iy, w > 0 ? w : null, h > 0 ? h : null);
+            RefreshPreview();
+            SetStatus($"그림 추가 @ ({ix},{iy})");
         }
         catch (Exception ex) { SetError(ex.Message); }
     }
