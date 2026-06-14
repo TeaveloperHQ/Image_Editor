@@ -259,6 +259,54 @@ public partial class MainWindow : Window
         catch (Exception ex) { SetError(ex.Message); }
     }
 
+    // ---------- PDF 용량 줄이기 ----------
+
+    private async void OnPickCompressPdf(object? sender, RoutedEventArgs e)
+    {
+        var path = await PickOpenFileAsync("PDF 선택", PdfType);
+        if (path is null) return;
+        CompressInput.Text = path;
+        CompressResult.Text = "";
+        try { CompressFileInfo.Text = $"현재 용량: {FormatBytes(new FileInfo(path).Length)}"; }
+        catch { CompressFileInfo.Text = ""; }
+    }
+
+    private async void OnCompressPdf(object? sender, RoutedEventArgs e)
+    {
+        var input = CompressInput.Text;
+        if (string.IsNullOrWhiteSpace(input) || !File.Exists(input)) { SetError("PDF 파일을 먼저 선택하세요."); return; }
+
+        var quality = (int)Math.Round(QualitySlider.Value);
+        int.TryParse(MaxDimension.Text, out var maxDim);
+
+        var suggested = Path.GetFileNameWithoutExtension(input) + "_compressed.pdf";
+        var output = await PickSaveFileAsync("압축 결과 저장", suggested, PdfType);
+        if (output is null) return;
+
+        try
+        {
+            SetStatus("압축 중…");
+            CompressResult.Text = "";
+            var result = await Task.Run(() => PdfCompressor.Compress(input, output, quality, maxDim));
+            var percent = (1 - result.Ratio) * 100;
+            CompressResult.Text = percent >= 0
+                ? $"{FormatBytes(result.OriginalBytes)} → {FormatBytes(result.NewBytes)} " +
+                  $"({percent:0.0}% 감소, 이미지 {result.ImagesRecompressed}개 재압축)"
+                : $"{FormatBytes(result.OriginalBytes)} → {FormatBytes(result.NewBytes)} (이미 충분히 작아 변화 없음)";
+            SetStatus($"완료: {output}");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        string[] units = { "B", "KB", "MB", "GB" };
+        double size = bytes;
+        var u = 0;
+        while (size >= 1024 && u < units.Length - 1) { size /= 1024; u++; }
+        return $"{size:0.#} {units[u]}";
+    }
+
     // ---------- 이미지 편집 ----------
 
     private void ReloadFontCombo(string? select)

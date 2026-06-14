@@ -110,8 +110,8 @@
                 </StackPanel>
             </TabItem>
 
-            <!-- ========== PDF 크기 변경 ========== -->
-            <TabItem Header="PDF 크기 변경">
+            <!-- ========== PDF 용지 크기 ========== -->
+            <TabItem Header="PDF 용지 크기">
                 <StackPanel Margin="16" Spacing="12">
                     <StackPanel Classes="row">
                         <TextBlock Classes="label" Text="PDF 파일" />
@@ -132,6 +132,38 @@
                     <TextBlock Foreground="#888" TextWrapping="Wrap"
                                Text="* 모든 페이지 내용을 선택한 용지 크기에 맞춰 다시 그립니다." />
                     <Button Classes="run" Content="크기 변경 후 저장" Click="OnResizePdf" />
+                </StackPanel>
+            </TabItem>
+
+            <!-- ========== PDF 용량 줄이기 ========== -->
+            <TabItem Header="PDF 용량 줄이기">
+                <StackPanel Margin="16" Spacing="12">
+                    <StackPanel Classes="row">
+                        <TextBlock Classes="label" Text="PDF 파일" />
+                        <TextBox x:Name="CompressInput" Width="380" IsReadOnly="True" Watermark="파일을 선택하세요" />
+                        <Button Content="찾아보기…" Click="OnPickCompressPdf" />
+                    </StackPanel>
+                    <TextBlock x:Name="CompressFileInfo" Foreground="#888" Text="" />
+
+                    <StackPanel Classes="row">
+                        <TextBlock Classes="label" Text="JPEG 품질" />
+                        <Slider x:Name="QualitySlider" Width="240" Minimum="10" Maximum="95" Value="60"
+                                TickFrequency="5" IsSnapToTickEnabled="True" />
+                        <TextBlock Text="{Binding #QualitySlider.Value}" VerticalAlignment="Center" Width="30" />
+                        <TextBlock Text="(낮을수록 용량↓ 화질↓)" Foreground="#888" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <StackPanel Classes="row">
+                        <TextBlock Classes="label" Text="최대 해상도" />
+                        <TextBox x:Name="MaxDimension" Width="100" Text="1600" />
+                        <TextBlock Text="px (이미지 긴 변. 0 = 해상도 유지)" Foreground="#888" VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock Foreground="#888" TextWrapping="Wrap"
+                               Text="* PDF 안의 이미지를 다운샘플·재압축해 용량을 줄입니다. 스캔/사진 PDF에 효과가 큽니다. (글자만 있는 PDF는 거의 줄지 않습니다)" />
+
+                    <Button Classes="run" Content="압축하여 저장" Click="OnCompressPdf" />
+                    <TextBlock x:Name="CompressResult" Foreground="#7CD992" Text="" TextWrapping="Wrap" />
                 </StackPanel>
             </TabItem>
 

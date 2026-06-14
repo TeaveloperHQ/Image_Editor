@@ -12,7 +12,8 @@ Avalonia UI(.NET 8) 기반이라 Windows에서 실행되며, 개발/테스트는
 | PDF 결합 | 여러 PDF를 원하는 순서로 하나로 합치기 |
 | PDF 분해 | 모든 페이지를 한 장씩 개별 파일로 분리 |
 | PDF 페이지 추출 | `1-3,5,8-10` 형식으로 원하는 페이지만 추출 |
-| PDF 크기 변경 | 모든 페이지를 A4/A3/A5/Letter/Legal 등으로 다시 맞춤 |
+| PDF 용량 줄이기 | 내부 이미지를 다운샘플·JPEG 재압축해 파일 용량 축소 (스캔/사진 PDF에 효과적) |
+| PDF 용지 크기 | 모든 페이지를 A4/A3/A5/Letter/Legal 등으로 다시 맞춤 |
 
 ### 이미지 편집 사용법
 
@@ -37,7 +38,8 @@ Image_Editor/
 │  │  ├─ ImageService.cs     #   이미지 리사이즈
 │  │  ├─ ImageEditSession.cs #   자르기/회전/텍스트·그림 추가 (편집 세션)
 │  │  ├─ FontCatalog.cs      #   시스템·사용자 폰트 관리
-│  │  ├─ PdfService.cs       #   PDF 결합/분해/추출/크기변경
+│  │  ├─ PdfService.cs       #   PDF 결합/분해/추출/용지크기
+│  │  ├─ PdfCompressor.cs    #   PDF 용량 줄이기 (이미지 재압축)
 │  │  └─ PageRange.cs        #   "1-3,5" 페이지 범위 파서
 │  └─ ImageEditor.App/    # Avalonia GUI
 └─ tests/
