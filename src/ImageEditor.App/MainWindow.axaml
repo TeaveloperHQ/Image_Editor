@@ -288,6 +288,12 @@
                             </StackPanel>
 
                             <Separator />
+                            <StackPanel Classes="row">
+                                <Button Content="적용(굽기)" Click="OnApplyImageOverlays" />
+                                <Button Content="선택 삭제" Click="OnDeleteImageOverlay" />
+                            </StackPanel>
+                            <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                       Text="* 올린 객체는 드래그로 이동, 파란 모서리로 크기조절 후 '적용'으로 확정됩니다." />
                             <TextBlock x:Name="EditInfo" Foreground="#888" Text="이미지를 불러오세요." TextWrapping="Wrap" />
                         </StackPanel>
                     </ScrollViewer>
@@ -367,6 +373,12 @@
                             </StackPanel>
 
                             <Separator />
+                            <StackPanel Classes="row">
+                                <Button Content="적용(굽기)" Click="OnApplyPdfOverlays" />
+                                <Button Content="선택 삭제" Click="OnDeletePdfOverlay" />
+                            </StackPanel>
+                            <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                       Text="* 객체는 드래그 이동·모서리 크기조절 후 '적용'. 페이지를 넘기거나 저장하면 자동 확정됩니다." />
                             <TextBlock x:Name="PdfEditInfo" Foreground="#888" Text="PDF를 불러오세요." TextWrapping="Wrap" />
                         </StackPanel>
                     </ScrollViewer>

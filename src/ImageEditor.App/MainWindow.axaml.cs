@@ -44,6 +44,10 @@ public partial class MainWindow : Window
     private string? _stampPath;      // 만들어진 도장 PNG(임시 파일)
     private string? _stampScanPath;  // 투명화할 스캔 원본
 
+    // 오버레이 객체(확정 전) 선택 상태
+    private OverlayItem? _selectedImageOverlay;
+    private OverlayItem? _selectedPdfOverlay;
+
     // PDF 편집 상태
     private const double PdfRenderScaling = 2.0;
     private PdfEditSession? _pdfSession;
@@ -435,6 +439,8 @@ public partial class MainWindow : Window
         {
             _session?.Dispose();
             _session = ImageEditSession.Load(path);
+            ClearOverlays(EditCanvas);
+            _selectedImageOverlay = null;
             RefreshPreview();
             SetStatus($"불러옴: {path}");
         }
@@ -446,7 +452,7 @@ public partial class MainWindow : Window
         if (_session is null) { SetError("저장할 이미지가 없습니다."); return; }
         var output = await PickSaveFileAsync("편집 결과 저장", "edited.png", ImageType);
         if (output is null) return;
-        try { _session.Save(output); SetStatus($"저장: {output}"); }
+        try { BakeImageOverlays(); RefreshPreview(); _session.Save(output); SetStatus($"저장: {output}"); }
         catch (Exception ex) { SetError(ex.Message); }
     }
 
@@ -458,7 +464,7 @@ public partial class MainWindow : Window
     private void EditOp(Action<ImageEditSession> op)
     {
         if (_session is null) { SetError("이미지를 먼저 불러오세요."); return; }
-        try { op(_session); RefreshPreview(); }
+        try { BakeImageOverlays(); op(_session); RefreshPreview(); }
         catch (Exception ex) { SetError(ex.Message); }
     }
 
@@ -474,6 +480,7 @@ public partial class MainWindow : Window
         var h = (int)(CropRect.Height / _displayScale);
         try
         {
+            BakeImageOverlays();
             _session.Crop(new SixLabors.ImageSharp.Rectangle(x, y, w, h));
             RefreshPreview();
             SetStatus("자르기 완료");
@@ -519,8 +526,8 @@ public partial class MainWindow : Window
             CropRect.Height = 0;
             CropRect.IsVisible = true;
         }
-        else if (ModeText.IsChecked == true) PlaceText(p);
-        else if (ModeImage.IsChecked == true) PlaceOverlay(p);
+        else if (ModeText.IsChecked == true) AddImageTextObject(p);
+        else if (ModeImage.IsChecked == true) AddImageImageObject(p);
     }
 
     private void OnCanvasMoved(object? sender, PointerEventArgs e)
@@ -535,39 +542,91 @@ public partial class MainWindow : Window
 
     private void OnCanvasReleased(object? sender, PointerReleasedEventArgs e) => _dragging = false;
 
-    private void PlaceText(Avalonia.Point p)
+    // ----- 오버레이 객체(이미지 편집) -----
+
+    private void AddImageTextObject(Avalonia.Point p)
     {
-        if (_session is null) return;
         var text = TextContent.Text ?? "";
         if (string.IsNullOrEmpty(text)) { SetError("넣을 텍스트를 입력하세요."); return; }
-        if (!float.TryParse(TextSize.Text, out var size) || size <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
-        if (!SixLabors.ImageSharp.Color.TryParseHex(TextColor.Text ?? "#000000", out var color))
-            color = SixLabors.ImageSharp.Color.Black;
-        try
+        if (!double.TryParse(TextSize.Text, out var sizeImg) || sizeImg <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
+        var item = OverlayItem.CreateText(text, (FontCombo.SelectedItem as string) ?? "", sizeImg * _displayScale, TextColor.Text ?? "#000000");
+        AddOverlay(EditCanvas, p, item, isPdf: false);
+        SetStatus("객체 추가됨 — 드래그로 이동, 모서리로 크기조절 후 '적용'");
+    }
+
+    private void AddImageImageObject(Avalonia.Point p)
+    {
+        if (_overlayPath is null) { SetError("먼저 얹을 이미지를 선택하세요."); return; }
+        Bitmap bmp;
+        try { bmp = new Bitmap(_overlayPath); }
+        catch (Exception ex) { SetError(ex.Message); return; }
+        int.TryParse(OverlayW.Text, out var wImg);
+        var displayW = wImg > 0 ? wImg * _displayScale : Math.Min(bmp.PixelSize.Width * _displayScale, 220);
+        var item = OverlayItem.CreateImage(_overlayPath, bmp, displayW);
+        AddOverlay(EditCanvas, p, item, isPdf: false);
+        SetStatus("객체 추가됨 — 드래그로 이동, 모서리로 크기조절 후 '적용'");
+    }
+
+    private void AddOverlay(Canvas canvas, Avalonia.Point p, OverlayItem item, bool isPdf)
+    {
+        Canvas.SetLeft(item, p.X);
+        Canvas.SetTop(item, p.Y);
+        item.Selected += (s, _) => SelectOverlay(canvas, (OverlayItem)s!, isPdf);
+        canvas.Children.Add(item);
+        SelectOverlay(canvas, item, isPdf);
+    }
+
+    private void SelectOverlay(Canvas canvas, OverlayItem item, bool isPdf)
+    {
+        foreach (var c in canvas.Children)
+            if (c is OverlayItem oi) oi.SetSelected(oi == item);
+        if (isPdf) _selectedPdfOverlay = item; else _selectedImageOverlay = item;
+    }
+
+    private static void ClearOverlays(Canvas canvas)
+    {
+        foreach (var oi in canvas.Children.OfType<OverlayItem>().ToList())
+            canvas.Children.Remove(oi);
+    }
+
+    private static SixLabors.ImageSharp.Color ParseImgColor(string? hex)
+        => SixLabors.ImageSharp.Color.TryParseHex(hex ?? "#000000", out var c) ? c : SixLabors.ImageSharp.Color.Black;
+
+    private void BakeImageOverlays()
+    {
+        if (_session is null) return;
+        foreach (var oi in EditCanvas.Children.OfType<OverlayItem>().ToList())
         {
-            var family = _fonts.Resolve(FontCombo.SelectedItem as string);
-            var (ix, iy) = ToImage(p);
-            _session.AddText(text, family, size, color, ix, iy);
-            RefreshPreview();
-            SetStatus($"텍스트 추가 @ ({ix},{iy})");
+            var (ix, iy) = ToImage(new Avalonia.Point(Canvas.GetLeft(oi), Canvas.GetTop(oi)));
+            if (oi.Kind == OverlayKind.Text)
+            {
+                var family = _fonts.Resolve(oi.FontFamilyName);
+                var sizeImg = (float)(oi.DisplayFontSize / _displayScale);
+                _session.AddText(oi.Text ?? "", family, sizeImg, ParseImgColor(oi.ColorHex), ix, iy);
+            }
+            else if (oi.ImagePath is not null)
+            {
+                var wImg = (int)Math.Round(oi.DisplayWidth / _displayScale);
+                _session.AddImage(oi.ImagePath, ix, iy, wImg > 0 ? wImg : null, null);
+            }
+            EditCanvas.Children.Remove(oi);
         }
+        _selectedImageOverlay = null;
+    }
+
+    private void OnApplyImageOverlays(object? sender, RoutedEventArgs e)
+    {
+        if (_session is null) { SetError("이미지를 먼저 불러오세요."); return; }
+        if (!EditCanvas.Children.OfType<OverlayItem>().Any()) { SetError("적용할 객체가 없습니다."); return; }
+        try { BakeImageOverlays(); RefreshPreview(); SetStatus("적용 완료"); }
         catch (Exception ex) { SetError(ex.Message); }
     }
 
-    private void PlaceOverlay(Avalonia.Point p)
+    private void OnDeleteImageOverlay(object? sender, RoutedEventArgs e)
     {
-        if (_session is null) return;
-        if (_overlayPath is null) { SetError("먼저 얹을 이미지를 선택하세요."); return; }
-        int.TryParse(OverlayW.Text, out var w);
-        int.TryParse(OverlayH.Text, out var h);
-        try
-        {
-            var (ix, iy) = ToImage(p);
-            _session.AddImage(_overlayPath, ix, iy, w > 0 ? w : null, h > 0 ? h : null);
-            RefreshPreview();
-            SetStatus($"그림 추가 @ ({ix},{iy})");
-        }
-        catch (Exception ex) { SetError(ex.Message); }
+        if (_selectedImageOverlay is null) { SetError("삭제할 객체를 선택하세요."); return; }
+        EditCanvas.Children.Remove(_selectedImageOverlay);
+        _selectedImageOverlay = null;
     }
 
     // ---------- PDF 편집 ----------
@@ -617,6 +676,8 @@ public partial class MainWindow : Window
             _pdfSession?.Dispose();
             _pdfSession = PdfEditSession.Load(path);
             _pdfPageIndex = 0;
+            ClearOverlays(PdfCanvas);
+            _selectedPdfOverlay = null;
             ReloadPdfFontCombo(null);
             RenderCurrentPdfPage();
             SetStatus($"불러옴: {path}");
@@ -629,13 +690,14 @@ public partial class MainWindow : Window
         if (_pdfSession is null) { SetError("저장할 PDF가 없습니다."); return; }
         var output = await PickSaveFileAsync("편집한 PDF 저장", "edited.pdf", PdfType);
         if (output is null) return;
-        try { _pdfSession.Save(output); SetStatus($"저장: {output}"); }
+        try { BakePdfOverlays(); _pdfSession.Save(output); SetStatus($"저장: {output}"); }
         catch (Exception ex) { SetError(ex.Message); }
     }
 
     private void OnPdfPrevPage(object? sender, RoutedEventArgs e)
     {
         if (_pdfSession is null || _pdfPageIndex <= 0) return;
+        BakePdfOverlays(); // 현재 페이지에 먼저 확정
         _pdfPageIndex--;
         RenderCurrentPdfPage();
     }
@@ -643,6 +705,7 @@ public partial class MainWindow : Window
     private void OnPdfNextPage(object? sender, RoutedEventArgs e)
     {
         if (_pdfSession is null || _pdfPageIndex >= _pdfSession.PageCount - 1) return;
+        BakePdfOverlays();
         _pdfPageIndex++;
         RenderCurrentPdfPage();
     }
@@ -669,30 +732,68 @@ public partial class MainWindow : Window
         PdfOverlayName.Text = Path.GetFileName(path);
     }
 
+    private double PdfFactor() => _pdfFit * _pdfRenderScale; // 표시 픽셀 / 포인트
+
     private void OnPdfCanvasPressed(object? sender, PointerPressedEventArgs e)
     {
         if (_pdfSession is null) { SetError("PDF를 먼저 불러오세요."); return; }
-        var (x, y) = ToPagePoint(e.GetPosition(PdfCanvas));
+        var p = e.GetPosition(PdfCanvas);
+        if (ModePdfImage.IsChecked == true) AddPdfImageObject(p);
+        else AddPdfTextObject(p);
+    }
 
-        try
+    private void AddPdfTextObject(Avalonia.Point p)
+    {
+        var text = PdfTextContent.Text ?? "";
+        if (string.IsNullOrEmpty(text)) { SetError("넣을 텍스트를 입력하세요."); return; }
+        if (!double.TryParse(PdfTextSize.Text, out var sizePt) || sizePt <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
+        var item = OverlayItem.CreateText(text, (PdfFontCombo.SelectedItem as string) ?? "", sizePt * PdfFactor(), PdfTextColor.Text ?? "#000000");
+        AddOverlay(PdfCanvas, p, item, isPdf: true);
+        SetStatus("객체 추가됨 — 드래그로 이동, 모서리로 크기조절 후 '적용'");
+    }
+
+    private void AddPdfImageObject(Avalonia.Point p)
+    {
+        if (_pdfOverlayPath is null) { SetError("먼저 얹을 이미지를 선택하세요."); return; }
+        Bitmap bmp;
+        try { bmp = new Bitmap(_pdfOverlayPath); }
+        catch (Exception ex) { SetError(ex.Message); return; }
+        double.TryParse(PdfOverlayW.Text, out var wpt);
+        var displayW = (wpt > 0 ? wpt : 120) * PdfFactor();
+        var item = OverlayItem.CreateImage(_pdfOverlayPath, bmp, displayW);
+        AddOverlay(PdfCanvas, p, item, isPdf: true);
+        SetStatus("객체 추가됨 — 드래그로 이동, 모서리로 크기조절 후 '적용'");
+    }
+
+    private void BakePdfOverlays()
+    {
+        if (_pdfSession is null) return;
+        var factor = PdfFactor();
+        foreach (var oi in PdfCanvas.Children.OfType<OverlayItem>().ToList())
         {
-            if (ModePdfImage.IsChecked == true)
-            {
-                if (_pdfOverlayPath is null) { SetError("먼저 얹을 이미지를 선택하세요."); return; }
-                double.TryParse(PdfOverlayW.Text, out var wpt);
-                _pdfSession.AddImage(_pdfPageIndex, _pdfOverlayPath, x, y, wpt);
-                SetStatus($"이미지 추가 @ ({x:0},{y:0}) pt");
-            }
-            else
-            {
-                var text = PdfTextContent.Text ?? "";
-                if (string.IsNullOrEmpty(text)) { SetError("넣을 텍스트를 입력하세요."); return; }
-                if (!double.TryParse(PdfTextSize.Text, out var size) || size <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
-                _pdfSession.AddText(_pdfPageIndex, text, x, y, PdfFontCombo.SelectedItem as string, size, PdfTextColor.Text ?? "#000000");
-                SetStatus($"텍스트 추가 @ ({x:0},{y:0}) pt");
-            }
-            RenderCurrentPdfPage();
+            var xPt = Canvas.GetLeft(oi) / factor;
+            var yPt = Canvas.GetTop(oi) / factor;
+            if (oi.Kind == OverlayKind.Text)
+                _pdfSession.AddText(_pdfPageIndex, oi.Text ?? "", xPt, yPt, oi.FontFamilyName, oi.DisplayFontSize / factor, oi.ColorHex);
+            else if (oi.ImagePath is not null)
+                _pdfSession.AddImage(_pdfPageIndex, oi.ImagePath, xPt, yPt, oi.DisplayWidth / factor);
+            PdfCanvas.Children.Remove(oi);
         }
+        _selectedPdfOverlay = null;
+    }
+
+    private void OnApplyPdfOverlays(object? sender, RoutedEventArgs e)
+    {
+        if (_pdfSession is null) { SetError("PDF를 먼저 불러오세요."); return; }
+        if (!PdfCanvas.Children.OfType<OverlayItem>().Any()) { SetError("적용할 객체가 없습니다."); return; }
+        try { BakePdfOverlays(); RenderCurrentPdfPage(); SetStatus("적용 완료"); }
         catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private void OnDeletePdfOverlay(object? sender, RoutedEventArgs e)
+    {
+        if (_selectedPdfOverlay is null) { SetError("삭제할 객체를 선택하세요."); return; }
+        PdfCanvas.Children.Remove(_selectedPdfOverlay);
+        _selectedPdfOverlay = null;
     }
 }
