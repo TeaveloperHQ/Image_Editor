@@ -87,10 +87,16 @@ dotnet test
 ### Windows 배포용 단일 실행 파일 만들기
 
 ```bash
-dotnet publish src/ImageEditor.App -c Release -r win-x64 \
-    --self-contained -p:PublishSingleFile=true
+dotnet publish src/ImageEditor.App -c Release -r win-x64
 ```
-`bin/Release/net8.0/win-x64/publish/` 에 `.exe` 가 생성됩니다.
+단일 파일·self-contained 옵션은 csproj에 win-x64 조건으로 들어 있어 별도 플래그가 필요 없습니다.
+`bin/Release/net8.0/win-x64/publish/` 에 아이콘이 적용된 `TeaveloperImageEditor.exe` (설치 불필요) 가 생성됩니다.
+
+> 아이콘 소스는 [`assets/icon.svg`](assets/icon.svg) (teaveloper 브랜드 그라데이션). 수정 시:
+> ```bash
+> magick -background none assets/icon.svg -define icon:auto-resize=256,128,64,48,32,16 assets/app.ico
+> magick -background none assets/icon.svg -resize 256x256 assets/icon-256.png
+> ```
 
 ## 메모
 

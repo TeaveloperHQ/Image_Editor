@@ -5,7 +5,7 @@
         mc:Ignorable="d" d:DesignWidth="940" d:DesignHeight="660"
         x:Class="ImageEditor.App.MainWindow"
         Width="940" Height="660"
-        Title="Image / PDF Editor">
+        Title="Teaveloper · 이미지 / PDF 편집기">
 
     <Window.Styles>
         <Style Selector="TextBlock.label">

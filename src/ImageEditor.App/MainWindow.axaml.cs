@@ -76,12 +76,25 @@ public partial class MainWindow : Window
         MergeList.ItemsSource = _mergeFiles;
         ReloadFontCombo(null);
         LoadStampWatermark();
+        LoadAppIcon();
         KeyDown += OnGlobalKeyDown;
 
         // 스캔 투명화: 슬라이더/색 통일 변경을 미리보기에 실시간 반영
         StampThreshold.ValueChanged += (_, _) => UpdateStampFromScan();
         StampRecolorOn.IsCheckedChanged += (_, _) => UpdateStampFromScan();
         StampRecolorCombo.SelectionChanged += (_, _) => UpdateStampFromScan();
+    }
+
+    // 창/작업표시줄 아이콘
+    private void LoadAppIcon()
+    {
+        try
+        {
+            var asm = typeof(MainWindow).Assembly.GetName().Name;
+            using var s = AssetLoader.Open(new Uri($"avares://{asm}/Assets/icon-256.png"));
+            Icon = new WindowIcon(s);
+        }
+        catch { /* 리소스 없으면 무시 */ }
     }
 
     // 미리보기 배경에 teaveloper 엠블럼을 깔아둠(도장 투명 확인 + 빈 화면 장식)

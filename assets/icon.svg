@@ -1,0 +1,33 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- teaveloper 공식 브랜드 그라데이션 -->
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#6366f1"/>
+      <stop offset="50%"  stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <clipPath id="frameClip">
+      <rect x="232" y="250" width="430" height="340" rx="34"/>
+    </clipPath>
+  </defs>
+
+  <!-- 브랜드 라운드 사각형 -->
+  <rect x="112" y="112" width="800" height="800" rx="184" fill="url(#g)"/>
+
+  <!-- 사진(이미지) — 산 -->
+  <g clip-path="url(#frameClip)">
+    <path d="M232 560 L356 432 L446 522 L540 446 L662 580 L662 590 L232 590 Z" fill="#FFFFFF"/>
+  </g>
+  <!-- 해 -->
+  <circle cx="338" cy="344" r="40" fill="#FFFFFF"/>
+  <!-- 사진 프레임 테두리 -->
+  <rect x="232" y="250" width="430" height="340" rx="34" fill="none" stroke="#FFFFFF" stroke-width="28"/>
+
+  <!-- 편집 연필 (오른쪽 아래, 좌상 방향 팁) -->
+  <g transform="rotate(45 648 672)">
+    <rect x="560" y="624" width="206" height="96" rx="12" fill="#FFFFFF"/>
+    <rect x="730" y="624" width="36" height="96" rx="12" fill="#E6E1FF"/>
+    <path d="M560 624 L512 672 L560 720 Z" fill="#FFFFFF"/>
+    <path d="M540 648 L512 672 L540 696 Z" fill="#8b5cf6"/>
+  </g>
+</svg>

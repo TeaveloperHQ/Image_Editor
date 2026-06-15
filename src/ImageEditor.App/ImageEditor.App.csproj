@@ -5,6 +5,18 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>..\..\assets\app.ico</ApplicationIcon>
+    <AssemblyName>TeaveloperImageEditor</AssemblyName>
+  </PropertyGroup>
+
+  <!-- 사용자가 exe 하나만 받아 바로 실행: win-x64 self-contained 단일 파일 -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +33,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="..\..\assets\icon-256.png" Link="Assets/icon-256.png" />
   </ItemGroup>
 
   <ItemGroup>
