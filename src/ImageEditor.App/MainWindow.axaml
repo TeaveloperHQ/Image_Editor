@@ -232,7 +232,7 @@
 
                             <Separator />
                             <StackPanel Classes="row">
-                                <Button Content="적용(굽기)" Click="OnApplyImageOverlays" />
+                                <Button Content="적용" Click="OnApplyImageOverlays" />
                                 <Button Content="선택 삭제" Click="OnDeleteImageOverlay" />
                             </StackPanel>
                             <TextBlock Foreground="#888" TextWrapping="Wrap"
@@ -324,7 +324,7 @@
 
                             <Separator />
                             <StackPanel Classes="row">
-                                <Button Content="적용(굽기)" Click="OnApplyPdfOverlays" />
+                                <Button Content="적용" Click="OnApplyPdfOverlays" />
                                 <Button Content="선택 삭제" Click="OnDeletePdfOverlay" />
                             </StackPanel>
                             <TextBlock Foreground="#888" TextWrapping="Wrap"
