@@ -58,6 +58,10 @@ public partial class MainWindow : Window
     private bool _panning;
     private Avalonia.Point _panLast;
 
+    // 실행 취소(Ctrl+Z) 스냅샷
+    private readonly List<byte[]> _imageUndo = new();
+    private readonly List<byte[]> _pdfUndo = new();
+
     // PDF 편집 상태
     private const double PdfRenderScaling = 2.0;
     private PdfEditSession? _pdfSession;
@@ -97,14 +101,83 @@ public partial class MainWindow : Window
 
     private void OnGlobalKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Handled || (e.Key != Key.Delete && e.Key != Key.Back)) return;
-        // 텍스트 입력 중에는 글자 삭제로 동작하도록 가로채지 않음
+        if (e.Handled) return;
+        // 텍스트 입력 중에는 가로채지 않음(글자 삭제/입력 취소가 정상 동작하도록)
         if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox) return;
 
-        var removed = MainTabs.SelectedItem == PdfEditTab ? DeleteSelectedPdfOverlay()
-                    : MainTabs.SelectedItem == ImageEditTab ? DeleteSelectedImageOverlay()
-                    : false;
-        if (removed) e.Handled = true;
+        // Ctrl+Z: 실행 취소
+        if (e.Key == Key.Z && e.KeyModifiers == KeyModifiers.Control)
+        {
+            if (MainTabs.SelectedItem == PdfEditTab) UndoPdf();
+            else if (MainTabs.SelectedItem == ImageEditTab) UndoImage();
+            else return;
+            e.Handled = true;
+            return;
+        }
+
+        // Del/Backspace: 선택 객체 삭제
+        if (e.Key == Key.Delete || e.Key == Key.Back)
+        {
+            var removed = MainTabs.SelectedItem == PdfEditTab ? DeleteSelectedPdfOverlay()
+                        : MainTabs.SelectedItem == ImageEditTab ? DeleteSelectedImageOverlay()
+                        : false;
+            if (removed) e.Handled = true;
+        }
+    }
+
+    // ----- 실행 취소(Ctrl+Z) -----
+
+    private void PushImageUndo()
+    {
+        if (_session is null) return;
+        _imageUndo.Add(_session.ToPngBytes());
+        if (_imageUndo.Count > 25) _imageUndo.RemoveAt(0);
+    }
+
+    private void UndoImage()
+    {
+        // 1순위: 아직 안 구운 객체가 있으면 마지막 객체 제거
+        var objs = EditCanvas.Children.OfType<OverlayItem>().ToList();
+        if (objs.Count > 0)
+        {
+            EditCanvas.Children.Remove(objs[^1]);
+            _selectedImageOverlay = null;
+            SetStatus("실행 취소: 마지막 객체");
+            return;
+        }
+        if (_session is null || _imageUndo.Count == 0) { SetStatus("취소할 작업이 없습니다."); return; }
+        var bytes = _imageUndo[^1];
+        _imageUndo.RemoveAt(_imageUndo.Count - 1);
+        _session.Dispose();
+        _session = ImageEditSession.FromBytes(bytes);
+        RefreshPreview();
+        SetStatus("실행 취소");
+    }
+
+    private void PushPdfUndo()
+    {
+        if (_pdfSession is null) return;
+        _pdfUndo.Add(_pdfSession.ToBytes());
+        if (_pdfUndo.Count > 25) _pdfUndo.RemoveAt(0);
+    }
+
+    private void UndoPdf()
+    {
+        var objs = PdfCanvas.Children.OfType<OverlayItem>().ToList();
+        if (objs.Count > 0)
+        {
+            PdfCanvas.Children.Remove(objs[^1]);
+            _selectedPdfOverlay = null;
+            SetStatus("실행 취소: 마지막 객체");
+            return;
+        }
+        if (_pdfSession is null || _pdfUndo.Count == 0) { SetStatus("취소할 작업이 없습니다."); return; }
+        var bytes = _pdfUndo[^1];
+        _pdfUndo.RemoveAt(_pdfUndo.Count - 1);
+        _pdfSession = PdfEditSession.FromBytes(bytes);
+        if (_pdfPageIndex >= _pdfSession.PageCount) _pdfPageIndex = _pdfSession.PageCount - 1;
+        RenderCurrentPdfPage();
+        SetStatus("실행 취소");
     }
 
     // ---------- 공통 헬퍼 ----------
@@ -523,6 +596,7 @@ public partial class MainWindow : Window
             _session = ImageEditSession.Load(path);
             ClearOverlays(EditCanvas);
             _selectedImageOverlay = null;
+            _imageUndo.Clear();
             SetEditZoom(1.0);
             RefreshPreview();
             SetStatus($"불러옴: {path}");
@@ -547,7 +621,7 @@ public partial class MainWindow : Window
     private void EditOp(Action<ImageEditSession> op)
     {
         if (_session is null) { SetError("이미지를 먼저 불러오세요."); return; }
-        try { BakeImageOverlays(); op(_session); RefreshPreview(); }
+        try { PushImageUndo(); BakeImageOverlays(); op(_session); RefreshPreview(); }
         catch (Exception ex) { SetError(ex.Message); }
     }
 
@@ -563,6 +637,7 @@ public partial class MainWindow : Window
         var h = (int)(CropRect.Height / _displayScale);
         try
         {
+            PushImageUndo();
             BakeImageOverlays();
             _session.Crop(new SixLabors.ImageSharp.Rectangle(x, y, w, h));
             RefreshPreview();
@@ -739,11 +814,6 @@ public partial class MainWindow : Window
         _selectedImageOverlay = null;
     }
 
-    private void OnDeleteImageOverlay(object? sender, RoutedEventArgs e)
-    {
-        if (!DeleteSelectedImageOverlay()) SetError("삭제할 객체를 선택하세요.");
-    }
-
     private bool DeleteSelectedImageOverlay()
     {
         if (_selectedImageOverlay is null) return false;
@@ -801,6 +871,7 @@ public partial class MainWindow : Window
             _pdfPageIndex = 0;
             ClearOverlays(PdfCanvas);
             _selectedPdfOverlay = null;
+            _pdfUndo.Clear();
             SetPdfZoom(1.0);
             ReloadPdfFontCombo(null);
             RenderCurrentPdfPage();
@@ -901,8 +972,11 @@ public partial class MainWindow : Window
     private void BakePdfOverlays()
     {
         if (_pdfSession is null) return;
+        var objs = PdfCanvas.Children.OfType<OverlayItem>().ToList();
+        if (objs.Count == 0) { _selectedPdfOverlay = null; return; }
+        PushPdfUndo(); // 굽기 전 스냅샷
         var factor = PdfFactor();
-        foreach (var oi in PdfCanvas.Children.OfType<OverlayItem>().ToList())
+        foreach (var oi in objs)
         {
             var xPt = Canvas.GetLeft(oi) / factor;
             var yPt = Canvas.GetTop(oi) / factor;
@@ -913,11 +987,6 @@ public partial class MainWindow : Window
             PdfCanvas.Children.Remove(oi);
         }
         _selectedPdfOverlay = null;
-    }
-
-    private void OnDeletePdfOverlay(object? sender, RoutedEventArgs e)
-    {
-        if (!DeleteSelectedPdfOverlay()) SetError("삭제할 객체를 선택하세요.");
     }
 
     private bool DeleteSelectedPdfOverlay()

@@ -84,6 +84,18 @@ public class ImageEditTests : IDisposable
     }
 
     [Fact]
+    public void FromBytes_RestoresSession()
+    {
+        using var s = ImageEditSession.Load(Make("a.png", 120, 80));
+        s.RotateRight(); // 80x120
+        var snapshot = s.ToPngBytes();
+
+        using var restored = ImageEditSession.FromBytes(snapshot);
+        Assert.Equal(s.Width, restored.Width);
+        Assert.Equal(s.Height, restored.Height);
+    }
+
+    [Fact]
     public void Save_WritesFile()
     {
         using var s = ImageEditSession.Load(Make("a.png", 100, 100));

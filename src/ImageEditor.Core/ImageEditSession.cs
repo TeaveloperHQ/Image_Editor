@@ -25,6 +25,9 @@ public sealed class ImageEditSession : IDisposable
         return new ImageEditSession(Image.Load<Rgba32>(path));
     }
 
+    /// <summary>PNG 등 인코딩된 바이트에서 세션을 복원합니다(실행 취소용).</summary>
+    public static ImageEditSession FromBytes(byte[] bytes) => new(Image.Load<Rgba32>(bytes));
+
     // ----- 회전 -----
 
     /// <summary>시계 방향 90도 회전.</summary>

@@ -40,6 +40,13 @@ public sealed class PdfEditSession : IDisposable
         return new PdfEditSession(bytes, ReadPageSizes(bytes), _sharedResolver!);
     }
 
+    /// <summary>PDF 바이트에서 세션을 복원합니다(실행 취소용).</summary>
+    public static PdfEditSession FromBytes(byte[] bytes)
+    {
+        EnsureResolver();
+        return new PdfEditSession((byte[])bytes.Clone(), ReadPageSizes(bytes), _sharedResolver!);
+    }
+
     private static void EnsureResolver()
     {
         if (_sharedResolver is null)

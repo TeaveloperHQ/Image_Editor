@@ -69,6 +69,17 @@ public class PdfEditTests : IDisposable
     }
 
     [Fact]
+    public void FromBytes_RestoresSession()
+    {
+        var pdf = CreateBasePdf("base.pdf", pages: 3);
+        using var session = PdfEditSession.Load(pdf);
+        var snapshot = session.ToBytes();
+
+        using var restored = PdfEditSession.FromBytes(snapshot);
+        Assert.Equal(3, restored.PageCount);
+    }
+
+    [Fact]
     public void RenderPage_ReflectsPageSize()
     {
         var pdf = CreateBasePdf("base.pdf");

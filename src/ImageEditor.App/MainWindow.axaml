@@ -231,11 +231,8 @@
                             </StackPanel>
 
                             <Separator />
-                            <StackPanel Classes="row">
-                                <Button Content="선택 삭제" Click="OnDeleteImageOverlay" />
-                            </StackPanel>
                             <TextBlock Foreground="#888" TextWrapping="Wrap"
-                                       Text="* 올린 객체는 드래그로 이동, 파란 모서리로 크기조절. 저장하면 그대로 확정됩니다. (객체 선택 후 Del 삭제)" />
+                                       Text="* 올린 객체는 드래그로 이동, 파란 모서리로 크기조절. 저장하면 그대로 확정됩니다.&#10;  (객체 선택 후 Del 삭제 · Ctrl+Z 실행취소)" />
                             <TextBlock x:Name="EditInfo" Foreground="#888" Text="이미지를 불러오세요." TextWrapping="Wrap" />
                         </StackPanel>
                     </ScrollViewer>
@@ -322,11 +319,8 @@
                             </StackPanel>
 
                             <Separator />
-                            <StackPanel Classes="row">
-                                <Button Content="선택 삭제" Click="OnDeletePdfOverlay" />
-                            </StackPanel>
                             <TextBlock Foreground="#888" TextWrapping="Wrap"
-                                       Text="* 객체는 드래그 이동·모서리 크기조절. 페이지를 넘기거나 저장하면 그대로 확정됩니다. (선택 후 Del 삭제)" />
+                                       Text="* 객체는 드래그 이동·모서리 크기조절. 페이지를 넘기거나 저장하면 그대로 확정됩니다.&#10;  (선택 후 Del 삭제 · Ctrl+Z 실행취소)" />
                             <TextBlock x:Name="PdfEditInfo" Foreground="#888" Text="PDF를 불러오세요." TextWrapping="Wrap" />
                         </StackPanel>
                     </ScrollViewer>
