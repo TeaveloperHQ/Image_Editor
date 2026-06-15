@@ -117,6 +117,7 @@ public class OverlayItem : Border
 
     private void OnBodyPressed(object? sender, PointerPressedEventArgs e)
     {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return; // 우클릭은 팬으로 넘김
         Selected?.Invoke(this, EventArgs.Empty);
         _drag = Drag.Move;
         _last = e.GetPosition(Parent as Visual);
@@ -126,6 +127,7 @@ public class OverlayItem : Border
 
     private void OnHandlePressed(object? sender, PointerPressedEventArgs e)
     {
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
         Selected?.Invoke(this, EventArgs.Empty);
         _drag = Drag.Resize;
         _last = e.GetPosition(Parent as Visual);

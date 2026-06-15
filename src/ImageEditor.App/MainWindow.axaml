@@ -187,7 +187,7 @@
                             <Separator />
                             <TextBlock Text="작업 모드" FontWeight="Bold" />
                             <UniformGrid Columns="2">
-                                <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" IsChecked="True" Margin="0,0,0,4" />
+                                <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" Margin="0,0,0,4" />
                                 <RadioButton x:Name="ModeText" GroupName="EditMode" Content="텍스트" Margin="0,0,0,4" />
                                 <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" />
                                 <RadioButton x:Name="ModeStamp" GroupName="EditMode" Content="도장" />
@@ -343,7 +343,7 @@
                             <Separator />
                             <TextBlock Text="얹을 내용" FontWeight="Bold" />
                             <StackPanel Classes="row">
-                                <RadioButton x:Name="ModePdfText" GroupName="PdfMode" Content="텍스트" IsChecked="True" />
+                                <RadioButton x:Name="ModePdfText" GroupName="PdfMode" Content="텍스트" />
                                 <RadioButton x:Name="ModePdfImage" GroupName="PdfMode" Content="이미지·서명" />
                             </StackPanel>
 
@@ -391,6 +391,8 @@
                             <LayoutTransformControl x:Name="PdfZoom" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Canvas x:Name="PdfCanvas" Background="Transparent"
                                         PointerPressed="OnPdfCanvasPressed"
+                                        PointerMoved="OnPdfCanvasMoved"
+                                        PointerReleased="OnPdfCanvasReleased"
                                         PointerWheelChanged="OnPdfWheel">
                                     <Image x:Name="PdfPageImage" Canvas.Left="0" Canvas.Top="0" />
                                 </Canvas>

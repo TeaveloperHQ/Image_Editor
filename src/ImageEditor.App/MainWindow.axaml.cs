@@ -53,6 +53,10 @@ public partial class MainWindow : Window
     private double _editZoom = 1.0;
     private double _pdfZoom = 1.0;
 
+    // 우클릭 드래그 화면 이동(팬)
+    private bool _panning;
+    private Avalonia.Point _panLast;
+
     // PDF 편집 상태
     private const double PdfRenderScaling = 2.0;
     private PdfEditSession? _pdfSession;
@@ -569,8 +573,12 @@ public partial class MainWindow : Window
     private void OnCanvasPressed(object? sender, PointerPressedEventArgs e)
     {
         if (_session is null) return;
-        var p = e.GetPosition(EditCanvas);
+        var props = e.GetCurrentPoint(EditCanvas).Properties;
 
+        if (props.IsRightButtonPressed) { StartPan(EditScroll, EditCanvas, e); return; }
+        if (!props.IsLeftButtonPressed) return;
+
+        var p = e.GetPosition(EditCanvas);
         if (ModeCrop.IsChecked == true)
         {
             _dragging = true;
@@ -587,6 +595,7 @@ public partial class MainWindow : Window
 
     private void OnCanvasMoved(object? sender, PointerEventArgs e)
     {
+        if (DoPan(EditScroll, e)) return;
         if (!_dragging || _session is null) return;
         var p = e.GetPosition(EditCanvas);
         Canvas.SetLeft(CropRect, Math.Min(p.X, _cropStart.X));
@@ -597,11 +606,41 @@ public partial class MainWindow : Window
 
     private void OnCanvasReleased(object? sender, PointerReleasedEventArgs e)
     {
+        if (EndPan(e)) return;
         if (!_dragging) return;
         _dragging = false;
         // 드래그가 거의 없으면(단순 클릭) 선택 영역을 초기화 — 일반 편집기처럼
         if (CropRect.Width < 3 || CropRect.Height < 3)
             CropRect.IsVisible = false;
+    }
+
+    // ----- 우클릭 드래그 화면 이동(팬), 이미지·PDF 공용 -----
+
+    private void StartPan(ScrollViewer sv, Control captureTarget, PointerPressedEventArgs e)
+    {
+        _panning = true;
+        _panLast = e.GetPosition(sv);
+        e.Pointer.Capture(captureTarget);
+        e.Handled = true;
+    }
+
+    private bool DoPan(ScrollViewer sv, PointerEventArgs e)
+    {
+        if (!_panning) return false;
+        var pos = e.GetPosition(sv);
+        sv.Offset -= pos - _panLast; // Point - Point = Vector
+        _panLast = pos;
+        e.Handled = true;
+        return true;
+    }
+
+    private bool EndPan(PointerReleasedEventArgs e)
+    {
+        if (!_panning) return false;
+        _panning = false;
+        e.Pointer.Capture(null);
+        e.Handled = true;
+        return true;
     }
 
     // ----- 오버레이 객체(이미지 편집) -----
@@ -806,10 +845,19 @@ public partial class MainWindow : Window
     private void OnPdfCanvasPressed(object? sender, PointerPressedEventArgs e)
     {
         if (_pdfSession is null) { SetError("PDF를 먼저 불러오세요."); return; }
+        var props = e.GetCurrentPoint(PdfCanvas).Properties;
+
+        if (props.IsRightButtonPressed) { StartPan(PdfScroll, PdfCanvas, e); return; }
+        if (!props.IsLeftButtonPressed) return;
+
         var p = e.GetPosition(PdfCanvas);
-        if (ModePdfImage.IsChecked == true) AddPdfImageObject(p);
-        else AddPdfTextObject(p);
+        if (ModePdfText.IsChecked == true) AddPdfTextObject(p);
+        else if (ModePdfImage.IsChecked == true) AddPdfImageObject(p);
     }
+
+    private void OnPdfCanvasMoved(object? sender, PointerEventArgs e) => DoPan(PdfScroll, e);
+
+    private void OnPdfCanvasReleased(object? sender, PointerReleasedEventArgs e) => EndPan(e);
 
     private void AddPdfTextObject(Avalonia.Point p)
     {
