@@ -39,8 +39,9 @@ public static class StampMaker
         var pen = Pens.Solid(color, thickness);
         var brush = new SolidBrush(color);
 
-        // 원형은 둥근 테두리 안에 들어가도록 글자 영역을 더 좁게 잡습니다.
-        var areaFrac = shape == StampShape.Circle ? 0.50f : 0.72f;
+        // 실제 도장처럼 글자가 테두리 가까이 차도록 영역을 크게 잡습니다.
+        // (원형은 모서리 칸이 둥근 테두리에 닿지 않을 만큼만 여유)
+        var areaFrac = shape == StampShape.Circle ? 0.66f : 0.78f;
         var area = sizePx * areaFrac;
         var left = (sizePx - area) / 2f;
         var top = (sizePx - area) / 2f;
@@ -48,7 +49,7 @@ public static class StampMaker
         var cellH = area / rows;
 
         // 글자 크기를 잉크 실측으로 맞춰 셀 안에 꽉 차되 넘치지 않게 함
-        var fillRatio = shape == StampShape.Circle ? 0.80f : 0.84f;
+        var fillRatio = 0.86f;
         var targetBox = MathF.Min(cellW, cellH) * fillRatio;
         var font = family.CreateFont(FitFontSize(family, chars, targetBox), FontStyle.Regular);
 
@@ -61,14 +62,14 @@ public static class StampMaker
             else
                 ctx.Draw(pen, new RectangularPolygon(inset, inset, sizePx - 2 * inset, sizePx - 2 * inset));
 
-            // 글자: 오른쪽 열부터(전통 방식) 위→아래로 채우고, 잉크 중심을 셀 중심에 맞춤
+            // 글자: 왼쪽 열부터 위→아래로 채움(직접 인쇄용이라 좌우 반전 안 함).
+            // 잉크 중심을 셀 중심에 맞춤.
             var k = 0;
-            for (var colFromRight = 0; colFromRight < cols && k < n; colFromRight++)
+            for (var col = 0; col < cols && k < n; col++)
             {
-                var screenCol = cols - 1 - colFromRight;
                 for (var row = 0; row < rows && k < n; row++)
                 {
-                    var cx = left + (screenCol + 0.5f) * cellW;
+                    var cx = left + (col + 0.5f) * cellW;
                     var cy = top + (row + 0.5f) * cellH;
                     DrawCenteredGlyph(ctx, font, chars[k], brush, cx, cy);
                     k++;
