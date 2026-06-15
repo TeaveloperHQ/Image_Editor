@@ -35,30 +35,33 @@ public static class StampMaker
         var rows = (int)Math.Ceiling((double)n / cols);
 
         using var image = new Image<Rgba32>(sizePx, sizePx); // 전부 투명
-        var thickness = MathF.Max(2.5f, sizePx * 0.05f);
+        var thickness = MathF.Max(2.5f, sizePx * 0.055f);
         var pen = Pens.Solid(color, thickness);
         var brush = new SolidBrush(color);
 
         // 원형은 둥근 테두리 안에 들어가도록 글자 영역을 더 좁게 잡습니다.
-        var areaFrac = shape == StampShape.Circle ? 0.52f : 0.72f;
+        var areaFrac = shape == StampShape.Circle ? 0.50f : 0.72f;
         var area = sizePx * areaFrac;
         var left = (sizePx - area) / 2f;
         var top = (sizePx - area) / 2f;
         var cellW = area / cols;
         var cellH = area / rows;
-        var fontSize = MathF.Min(cellW, cellH) * 0.78f;
-        var font = family.CreateFont(fontSize, FontStyle.Regular);
+
+        // 글자 크기를 잉크 실측으로 맞춰 셀 안에 꽉 차되 넘치지 않게 함
+        var fillRatio = shape == StampShape.Circle ? 0.80f : 0.84f;
+        var targetBox = MathF.Min(cellW, cellH) * fillRatio;
+        var font = family.CreateFont(FitFontSize(family, chars, targetBox), FontStyle.Regular);
 
         image.Mutate(ctx =>
         {
-            // 테두리
             var inset = thickness;
             if (shape == StampShape.Circle)
-                ctx.Draw(pen, new EllipsePolygon(sizePx / 2f, sizePx / 2f, sizePx / 2f - inset, sizePx / 2f - inset));
+                // EllipsePolygon 은 (중심X, 중심Y, 너비, 높이) — 반지름이 아니라 지름을 넘김
+                ctx.Draw(pen, new EllipsePolygon(sizePx / 2f, sizePx / 2f, sizePx - 2 * inset, sizePx - 2 * inset));
             else
                 ctx.Draw(pen, new RectangularPolygon(inset, inset, sizePx - 2 * inset, sizePx - 2 * inset));
 
-            // 글자: 오른쪽 열부터(전통 방식) 위→아래로 채움
+            // 글자: 오른쪽 열부터(전통 방식) 위→아래로 채우고, 잉크 중심을 셀 중심에 맞춤
             var k = 0;
             for (var colFromRight = 0; colFromRight < cols && k < n; colFromRight++)
             {
@@ -67,13 +70,7 @@ public static class StampMaker
                 {
                     var cx = left + (screenCol + 0.5f) * cellW;
                     var cy = top + (row + 0.5f) * cellH;
-                    var options = new RichTextOptions(font)
-                    {
-                        Origin = new PointF(cx, cy),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
-                    ctx.DrawText(options, chars[k], brush);
+                    DrawCenteredGlyph(ctx, font, chars[k], brush, cx, cy);
                     k++;
                 }
             }
@@ -129,6 +126,42 @@ public static class StampMaker
 
     /// <summary>도장 글자 수(자모 결합·한자 포함 텍스트 요소 단위).</summary>
     public static int CharacterCount(string? text) => SplitCharacters(text ?? string.Empty).Count;
+
+    /// <summary>가장 큰 글자의 잉크가 targetBox 안에 들어가도록 폰트 크기를 계산합니다.</summary>
+    private static float FitFontSize(FontFamily family, IReadOnlyList<string> chars, float targetBox)
+    {
+        const float baseSize = 100f;
+        var options = new TextOptions(family.CreateFont(baseSize));
+        var maxDim = 1f;
+        foreach (var ch in chars)
+        {
+            var b = TextMeasurer.MeasureBounds(ch, options);
+            maxDim = MathF.Max(maxDim, MathF.Max(b.Width, b.Height));
+        }
+        return baseSize * targetBox / maxDim;
+    }
+
+    /// <summary>글자의 잉크 중심이 (cx, cy)에 오도록 그립니다(실제 그려질 위치를 측정해 보정).</summary>
+    private static void DrawCenteredGlyph(IImageProcessingContext ctx, Font font, string ch, SolidBrush brush, float cx, float cy)
+    {
+        var probe = new RichTextOptions(font)
+        {
+            Origin = new PointF(cx, cy),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var b = TextMeasurer.MeasureBounds(ch, probe);
+        var offX = (b.Left + b.Width / 2f) - cx;
+        var offY = (b.Top + b.Height / 2f) - cy;
+
+        var draw = new RichTextOptions(font)
+        {
+            Origin = new PointF(cx - offX, cy - offY),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        ctx.DrawText(draw, ch, brush);
+    }
 
     private static IReadOnlyList<string> SplitCharacters(string text)
     {

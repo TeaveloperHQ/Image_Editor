@@ -296,7 +296,7 @@
                                     </ComboBox>
                                 </StackPanel>
                                 <TextBlock Foreground="#888" TextWrapping="Wrap"
-                                           Text="* 자동: 이름(3자 이하)은 원형, 단체명(4자 이상)은 사각으로 만듭니다. 원형/사각을 직접 고를 수도 있습니다." />
+                                           Text="* 자동: 끝의 '인'(印)을 뺀 글자가 5자 이상이면 사각(단체), 그 이하는 원형. 원형/사각을 직접 고를 수도 있습니다." />
                                 <Button Content="도장 만들기" Click="OnMakeStamp" HorizontalAlignment="Left" />
                             </StackPanel>
 

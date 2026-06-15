@@ -369,8 +369,10 @@ public partial class MainWindow : Window
     {
         if (StampShapeCircle.IsChecked == true) return StampShape.Circle;
         if (StampShapeSquare.IsChecked == true) return StampShape.Square;
-        // 자동: 이름(3자 이하)은 원형, 단체명(4자 이상)은 사각
-        return StampMaker.CharacterCount(text) >= 4 ? StampShape.Square : StampShape.Circle;
+        // 자동: 끝의 '인'(印)을 빼고 4자 초과(5자 이상)면 사각(단체), 그 이하는 원형
+        var core = StampMaker.CharacterCount(text);
+        if (text.TrimEnd().EndsWith("인")) core -= 1;
+        return core > 4 ? StampShape.Square : StampShape.Circle;
     }
 
     private void OnMakeStamp(object? sender, RoutedEventArgs e)
