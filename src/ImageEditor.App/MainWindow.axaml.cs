@@ -229,29 +229,33 @@ public partial class MainWindow : Window
         catch (Exception ex) { SetError(ex.Message); }
     }
 
-    // ---------- PDF 크기 변경 ----------
+    // ---------- PDF 크기 / 용량 ----------
 
-    private async void OnPickResizePdf(object? sender, RoutedEventArgs e)
+    private async void OnPickPdfSize(object? sender, RoutedEventArgs e)
     {
         var path = await PickOpenFileAsync("PDF 선택", PdfType);
-        if (path is not null) PdfResizeInput.Text = path;
+        if (path is null) return;
+        PdfSizeInput.Text = path;
+        CompressResult.Text = "";
+        try { PdfSizeInfo.Text = $"현재 용량: {FormatBytes(new FileInfo(path).Length)}"; }
+        catch { PdfSizeInfo.Text = ""; }
     }
 
     private async void OnResizePdf(object? sender, RoutedEventArgs e)
     {
-        var input = PdfResizeInput.Text;
+        var input = PdfSizeInput.Text;
         if (string.IsNullOrWhiteSpace(input) || !File.Exists(input)) { SetError("PDF 파일을 먼저 선택하세요."); return; }
 
         var sizeText = (PageSizeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "A4";
         if (!Enum.TryParse<PageSize>(sizeText, out var pageSize)) pageSize = PageSize.A4;
 
         var suggested = Path.GetFileNameWithoutExtension(input) + $"_{sizeText}.pdf";
-        var output = await PickSaveFileAsync("크기 변경 결과 저장", suggested, PdfType);
+        var output = await PickSaveFileAsync("용지 크기 변경 결과 저장", suggested, PdfType);
         if (output is null) return;
 
         try
         {
-            SetStatus("크기 변경 중…");
+            SetStatus("용지 크기 변경 중…");
             var keep = PdfKeepAspect.IsChecked == true;
             await Task.Run(() => PdfService.ResizePages(input, output, pageSize, keep));
             SetStatus($"완료: {output}");
@@ -259,43 +263,42 @@ public partial class MainWindow : Window
         catch (Exception ex) { SetError(ex.Message); }
     }
 
-    // ---------- PDF 용량 줄이기 ----------
-
-    private async void OnPickCompressPdf(object? sender, RoutedEventArgs e)
-    {
-        var path = await PickOpenFileAsync("PDF 선택", PdfType);
-        if (path is null) return;
-        CompressInput.Text = path;
-        CompressResult.Text = "";
-        try { CompressFileInfo.Text = $"현재 용량: {FormatBytes(new FileInfo(path).Length)}"; }
-        catch { CompressFileInfo.Text = ""; }
-    }
-
     private async void OnCompressPdf(object? sender, RoutedEventArgs e)
     {
-        var input = CompressInput.Text;
+        var input = PdfSizeInput.Text;
         if (string.IsNullOrWhiteSpace(input) || !File.Exists(input)) { SetError("PDF 파일을 먼저 선택하세요."); return; }
 
-        var quality = (int)Math.Round(QualitySlider.Value);
-        int.TryParse(MaxDimension.Text, out var maxDim);
+        // 슬라이더(줄이는 정도 %)를 품질·해상도로 환산 — 사용자는 한 값만 신경 쓰면 됨
+        var strength = (int)Math.Round(ReduceSlider.Value);
+        var (quality, maxDim) = StrengthToSettings(strength);
 
         var suggested = Path.GetFileNameWithoutExtension(input) + "_compressed.pdf";
-        var output = await PickSaveFileAsync("압축 결과 저장", suggested, PdfType);
+        var output = await PickSaveFileAsync("용량 줄인 결과 저장", suggested, PdfType);
         if (output is null) return;
 
         try
         {
-            SetStatus("압축 중…");
+            SetStatus("용량 줄이는 중…");
             CompressResult.Text = "";
             var result = await Task.Run(() => PdfCompressor.Compress(input, output, quality, maxDim));
             var percent = (1 - result.Ratio) * 100;
-            CompressResult.Text = percent >= 0
-                ? $"{FormatBytes(result.OriginalBytes)} → {FormatBytes(result.NewBytes)} " +
-                  $"({percent:0.0}% 감소, 이미지 {result.ImagesRecompressed}개 재압축)"
-                : $"{FormatBytes(result.OriginalBytes)} → {FormatBytes(result.NewBytes)} (이미 충분히 작아 변화 없음)";
+            CompressResult.Text = result.ImagesRecompressed == 0
+                ? $"{FormatBytes(result.OriginalBytes)} → {FormatBytes(result.NewBytes)} : 줄일 이미지가 없어 거의 그대로입니다(글자 위주 PDF)."
+                : $"{FormatBytes(result.OriginalBytes)} → {FormatBytes(result.NewBytes)} " +
+                  $"({percent:0.0}% 감소, 이미지 {result.ImagesRecompressed}개 처리)";
             SetStatus($"완료: {output}");
         }
         catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    /// <summary>줄이는 정도(10~90%)를 JPEG 품질과 최대 해상도로 환산합니다.</summary>
+    private static (int quality, int maxDimension) StrengthToSettings(int strength)
+    {
+        strength = Math.Clamp(strength, 10, 90);
+        // 많이 줄일수록 품질↓(85→25), 해상도↓(2400→800). 약하게면 해상도 유지.
+        var quality = (int)Math.Round(85 - (strength - 10) / 80.0 * 60);
+        var maxDimension = strength <= 20 ? 0 : (int)Math.Round(2400 - (strength - 20) / 70.0 * 1600);
+        return (Math.Clamp(quality, 25, 85), maxDimension);
     }
 
     private static string FormatBytes(long bytes)

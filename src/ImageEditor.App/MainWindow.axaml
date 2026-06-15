@@ -110,60 +110,55 @@
                 </StackPanel>
             </TabItem>
 
-            <!-- ========== PDF 용지 크기 ========== -->
-            <TabItem Header="PDF 용지 크기">
+            <!-- ========== PDF 크기 / 용량 ========== -->
+            <TabItem Header="PDF 크기/용량">
                 <StackPanel Margin="16" Spacing="12">
                     <StackPanel Classes="row">
                         <TextBlock Classes="label" Text="PDF 파일" />
-                        <TextBox x:Name="PdfResizeInput" Width="380" IsReadOnly="True" Watermark="파일을 선택하세요" />
-                        <Button Content="찾아보기…" Click="OnPickResizePdf" />
+                        <TextBox x:Name="PdfSizeInput" Width="380" IsReadOnly="True" Watermark="파일을 선택하세요" />
+                        <Button Content="찾아보기…" Click="OnPickPdfSize" />
                     </StackPanel>
-                    <StackPanel Classes="row">
-                        <TextBlock Classes="label" Text="용지 크기" />
-                        <ComboBox x:Name="PageSizeCombo" Width="160" SelectedIndex="0">
-                            <ComboBoxItem>A4</ComboBoxItem>
-                            <ComboBoxItem>A3</ComboBoxItem>
-                            <ComboBoxItem>A5</ComboBoxItem>
-                            <ComboBoxItem>Letter</ComboBoxItem>
-                            <ComboBoxItem>Legal</ComboBoxItem>
-                        </ComboBox>
-                        <CheckBox x:Name="PdfKeepAspect" Content="비율 유지(여백 추가)" IsChecked="True" />
-                    </StackPanel>
-                    <TextBlock Foreground="#888" TextWrapping="Wrap"
-                               Text="* 모든 페이지 내용을 선택한 용지 크기에 맞춰 다시 그립니다." />
-                    <Button Classes="run" Content="크기 변경 후 저장" Click="OnResizePdf" />
-                </StackPanel>
-            </TabItem>
+                    <TextBlock x:Name="PdfSizeInfo" Foreground="#888" Text="" />
 
-            <!-- ========== PDF 용량 줄이기 ========== -->
-            <TabItem Header="PDF 용량 줄이기">
-                <StackPanel Margin="16" Spacing="12">
-                    <StackPanel Classes="row">
-                        <TextBlock Classes="label" Text="PDF 파일" />
-                        <TextBox x:Name="CompressInput" Width="380" IsReadOnly="True" Watermark="파일을 선택하세요" />
-                        <Button Content="찾아보기…" Click="OnPickCompressPdf" />
-                    </StackPanel>
-                    <TextBlock x:Name="CompressFileInfo" Foreground="#888" Text="" />
+                    <!-- 용량 줄이기 -->
+                    <Border BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="14">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="용량 줄이기" FontWeight="Bold" />
+                            <StackPanel Classes="row">
+                                <TextBlock Text="조금" VerticalAlignment="Center" Foreground="#888" />
+                                <Slider x:Name="ReduceSlider" Width="300" Minimum="10" Maximum="90" Value="50"
+                                        TickFrequency="10" IsSnapToTickEnabled="True" />
+                                <TextBlock Text="많이" VerticalAlignment="Center" Foreground="#888" />
+                                <TextBlock Text="{Binding #ReduceSlider.Value}" VerticalAlignment="Center" />
+                                <TextBlock Text="% 줄이기" VerticalAlignment="Center" />
+                            </StackPanel>
+                            <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                       Text="* 슬라이더를 오른쪽으로 옮길수록 용량이 더 줄지만 사진 화질은 떨어집니다. 스캔·사진이 많은 PDF에 효과가 크고, 글자만 있는 PDF는 거의 줄지 않습니다." />
+                            <Button Content="용량 줄여 저장" Click="OnCompressPdf" HorizontalAlignment="Left" />
+                            <TextBlock x:Name="CompressResult" Foreground="#7CD992" Text="" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
 
-                    <StackPanel Classes="row">
-                        <TextBlock Classes="label" Text="JPEG 품질" />
-                        <Slider x:Name="QualitySlider" Width="240" Minimum="10" Maximum="95" Value="60"
-                                TickFrequency="5" IsSnapToTickEnabled="True" />
-                        <TextBlock Text="{Binding #QualitySlider.Value}" VerticalAlignment="Center" Width="30" />
-                        <TextBlock Text="(낮을수록 용량↓ 화질↓)" Foreground="#888" VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <StackPanel Classes="row">
-                        <TextBlock Classes="label" Text="최대 해상도" />
-                        <TextBox x:Name="MaxDimension" Width="100" Text="1600" />
-                        <TextBlock Text="px (이미지 긴 변. 0 = 해상도 유지)" Foreground="#888" VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <TextBlock Foreground="#888" TextWrapping="Wrap"
-                               Text="* PDF 안의 이미지를 다운샘플·재압축해 용량을 줄입니다. 스캔/사진 PDF에 효과가 큽니다. (글자만 있는 PDF는 거의 줄지 않습니다)" />
-
-                    <Button Classes="run" Content="압축하여 저장" Click="OnCompressPdf" />
-                    <TextBlock x:Name="CompressResult" Foreground="#7CD992" Text="" TextWrapping="Wrap" />
+                    <!-- 용지 크기 변경 -->
+                    <Border BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="14">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="용지 크기 변경" FontWeight="Bold" />
+                            <StackPanel Classes="row">
+                                <TextBlock Classes="label" Text="용지 크기" />
+                                <ComboBox x:Name="PageSizeCombo" Width="160" SelectedIndex="0">
+                                    <ComboBoxItem>A4</ComboBoxItem>
+                                    <ComboBoxItem>A3</ComboBoxItem>
+                                    <ComboBoxItem>A5</ComboBoxItem>
+                                    <ComboBoxItem>Letter</ComboBoxItem>
+                                    <ComboBoxItem>Legal</ComboBoxItem>
+                                </ComboBox>
+                                <CheckBox x:Name="PdfKeepAspect" Content="비율 유지(여백 추가)" IsChecked="True" />
+                            </StackPanel>
+                            <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                       Text="* 모든 페이지를 선택한 용지 크기에 맞춰 다시 그립니다." />
+                            <Button Content="용지 크기 변경 후 저장" Click="OnResizePdf" HorizontalAlignment="Left" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </TabItem>
 
