@@ -300,16 +300,19 @@
 
                     <!-- 미리보기 -->
                     <Border Background="#252525" CornerRadius="4">
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                            <Canvas x:Name="EditCanvas" Background="Transparent"
-                                    PointerPressed="OnCanvasPressed"
-                                    PointerMoved="OnCanvasMoved"
-                                    PointerReleased="OnCanvasReleased">
-                                <Image x:Name="EditImage" Canvas.Left="0" Canvas.Top="0" />
-                                <Rectangle x:Name="CropRect" IsVisible="False"
-                                           Stroke="#00B4FF" StrokeThickness="1.5"
-                                           StrokeDashArray="4,3" Fill="#3300B4FF" />
-                            </Canvas>
+                        <ScrollViewer x:Name="EditScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                            <LayoutTransformControl x:Name="EditZoom" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Canvas x:Name="EditCanvas" Background="Transparent"
+                                        PointerPressed="OnCanvasPressed"
+                                        PointerMoved="OnCanvasMoved"
+                                        PointerReleased="OnCanvasReleased"
+                                        PointerWheelChanged="OnEditWheel">
+                                    <Image x:Name="EditImage" Canvas.Left="0" Canvas.Top="0" />
+                                    <Rectangle x:Name="CropRect" IsVisible="False"
+                                               Stroke="#00B4FF" StrokeThickness="1.5"
+                                               StrokeDashArray="4,3" Fill="#3300B4FF" />
+                                </Canvas>
+                            </LayoutTransformControl>
                         </ScrollViewer>
                     </Border>
 
@@ -384,10 +387,14 @@
                     </ScrollViewer>
 
                     <Border Background="#252525" CornerRadius="4">
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                            <Canvas x:Name="PdfCanvas" Background="Transparent" PointerPressed="OnPdfCanvasPressed">
-                                <Image x:Name="PdfPageImage" Canvas.Left="0" Canvas.Top="0" />
-                            </Canvas>
+                        <ScrollViewer x:Name="PdfScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                            <LayoutTransformControl x:Name="PdfZoom" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Canvas x:Name="PdfCanvas" Background="Transparent"
+                                        PointerPressed="OnPdfCanvasPressed"
+                                        PointerWheelChanged="OnPdfWheel">
+                                    <Image x:Name="PdfPageImage" Canvas.Left="0" Canvas.Top="0" />
+                                </Canvas>
+                            </LayoutTransformControl>
                         </ScrollViewer>
                     </Border>
 

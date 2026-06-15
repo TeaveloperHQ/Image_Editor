@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using ImageEditor.Core;
@@ -47,6 +48,10 @@ public partial class MainWindow : Window
     // 오버레이 객체(확정 전) 선택 상태
     private OverlayItem? _selectedImageOverlay;
     private OverlayItem? _selectedPdfOverlay;
+
+    // 미리보기 줌(휠 확대/축소)
+    private double _editZoom = 1.0;
+    private double _pdfZoom = 1.0;
 
     // PDF 편집 상태
     private const double PdfRenderScaling = 2.0;
@@ -429,8 +434,8 @@ public partial class MainWindow : Window
         using var ms = new MemoryStream(_session.ToPngBytes());
         EditImage.Source = new Bitmap(ms);
 
-        const double maxW = 660, maxH = 540;
-        _displayScale = Math.Min(1.0, Math.Min(maxW / _session.Width, maxH / _session.Height));
+        // 폭에 맞춰 표시(세로는 넘치면 스크롤). 확대/축소는 휠 줌으로.
+        _displayScale = ViewportWidth(EditScroll) / _session.Width;
         var dw = _session.Width * _displayScale;
         var dh = _session.Height * _displayScale;
         EditImage.Width = dw;
@@ -444,6 +449,42 @@ public partial class MainWindow : Window
     private (int X, int Y) ToImage(Avalonia.Point p) =>
         ((int)(p.X / _displayScale), (int)(p.Y / _displayScale));
 
+    // ----- 미리보기 폭 맞춤 / 휠 줌 -----
+
+    private static double ViewportWidth(ScrollViewer sv)
+    {
+        var w = sv.Viewport.Width;
+        if (w < 10) w = sv.Bounds.Width;
+        // 세로 스크롤바가 생겨도 가로 스크롤바가 불필요하게 뜨지 않도록 여유분 확보
+        return w > 30 ? w - 18 : 560;
+    }
+
+    private void SetEditZoom(double z)
+    {
+        _editZoom = Math.Clamp(z, 0.2, 8.0);
+        EditZoom.LayoutTransform = new ScaleTransform(_editZoom, _editZoom);
+    }
+
+    private void OnEditWheel(object? sender, PointerWheelEventArgs e)
+    {
+        if (_session is null) return;
+        SetEditZoom(_editZoom * (e.Delta.Y > 0 ? 1.1 : 1.0 / 1.1));
+        e.Handled = true;
+    }
+
+    private void SetPdfZoom(double z)
+    {
+        _pdfZoom = Math.Clamp(z, 0.2, 8.0);
+        PdfZoom.LayoutTransform = new ScaleTransform(_pdfZoom, _pdfZoom);
+    }
+
+    private void OnPdfWheel(object? sender, PointerWheelEventArgs e)
+    {
+        if (_pdfSession is null) return;
+        SetPdfZoom(_pdfZoom * (e.Delta.Y > 0 ? 1.1 : 1.0 / 1.1));
+        e.Handled = true;
+    }
+
     private async void OnEditLoad(object? sender, RoutedEventArgs e)
     {
         var path = await PickOpenFileAsync("편집할 이미지 선택", ImageType);
@@ -454,6 +495,7 @@ public partial class MainWindow : Window
             _session = ImageEditSession.Load(path);
             ClearOverlays(EditCanvas);
             _selectedImageOverlay = null;
+            SetEditZoom(1.0);
             RefreshPreview();
             SetStatus($"불러옴: {path}");
         }
@@ -674,8 +716,8 @@ public partial class MainWindow : Window
         using (var ms = new MemoryStream(rp.Png))
             PdfPageImage.Source = new Bitmap(ms);
 
-        const double maxW = 680, maxH = 560;
-        _pdfFit = Math.Min(1.0, Math.Min(maxW / rp.PixelWidth, maxH / rp.PixelHeight));
+        // 폭에 맞춰 표시. 확대/축소는 휠 줌으로.
+        _pdfFit = ViewportWidth(PdfScroll) / rp.PixelWidth;
         _pdfRenderScale = rp.Scale;
 
         var dw = rp.PixelWidth * _pdfFit;
@@ -704,6 +746,7 @@ public partial class MainWindow : Window
             _pdfPageIndex = 0;
             ClearOverlays(PdfCanvas);
             _selectedPdfOverlay = null;
+            SetPdfZoom(1.0);
             ReloadPdfFontCombo(null);
             RenderCurrentPdfPage();
             SetStatus($"불러옴: {path}");
