@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
 using ImageEditor.Core;
 using PdfSharp;
@@ -70,7 +71,20 @@ public partial class MainWindow : Window
         InitializeComponent();
         MergeList.ItemsSource = _mergeFiles;
         ReloadFontCombo(null);
+        LoadStampWatermark();
         KeyDown += OnGlobalKeyDown;
+    }
+
+    // 도장 미리보기 배경에 teaveloper 엠블럼을 깔아 투명 영역을 확인할 수 있게 함
+    private void LoadStampWatermark()
+    {
+        try
+        {
+            var asm = typeof(MainWindow).Assembly.GetName().Name;
+            using var s = AssetLoader.Open(new Uri($"avares://{asm}/Assets/teaveloper-emblem.png"));
+            StampWatermark.Source = new Bitmap(s);
+        }
+        catch { /* 리소스 없으면 무시 */ }
     }
 
     private void OnGlobalKeyDown(object? sender, KeyEventArgs e)
@@ -396,6 +410,8 @@ public partial class MainWindow : Window
         if (path is null) return;
         _stampScanPath = path;
         StampScanName.Text = Path.GetFileName(path);
+        try { StampPreview.Source = new Bitmap(path); } catch (Exception ex) { SetError(ex.Message); }
+        StampReady.IsChecked = false; // 아직 투명화 전
     }
 
     private void OnMakeStampFromScan(object? sender, RoutedEventArgs e)

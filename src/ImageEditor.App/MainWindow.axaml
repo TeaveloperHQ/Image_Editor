@@ -332,10 +332,15 @@
                         </StackPanel>
                     </ScrollViewer>
 
-                    <!-- 미리보기(흰 종이) -->
+                    <!-- 미리보기(teaveloper 엠블럼 배경 → 투명 영역 확인용) -->
                     <Border Background="White" CornerRadius="4">
-                        <Image x:Name="StampPreview" Stretch="Uniform" Margin="24"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Grid>
+                            <Image x:Name="StampWatermark" Opacity="0.12" Stretch="Uniform" Margin="70"
+                                   IsHitTestVisible="False"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <Image x:Name="StampPreview" Stretch="Uniform" Margin="24"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
                     </Border>
 
                 </DockPanel>
