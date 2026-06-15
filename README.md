@@ -105,3 +105,9 @@ dotnet publish src/ImageEditor.App -c Release -r win-x64
 - PDF의 텍스트를 **새로** 그리는 기능을 추가할 경우, Linux에는 기본 폰트 리졸버가 없어
   `GlobalFontSettings.FontResolver` 설정이 필요합니다. 현재 결합/분해/추출/크기변경은
   기존 페이지를 그대로 옮기거나 이미지처럼 다시 그리므로 폰트가 필요하지 않습니다.
+
+## 라이선스
+
+[MIT License](LICENSE) © 2026 TeaveloperHQ
+
+사용 라이브러리는 각자의 라이선스를 따릅니다 (PDFsharp·Docnet MIT, SixLabors.ImageSharp 3.1.x는 오픈소스/개인 사용 무료).
