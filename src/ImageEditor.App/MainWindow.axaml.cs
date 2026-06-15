@@ -739,14 +739,6 @@ public partial class MainWindow : Window
         _selectedImageOverlay = null;
     }
 
-    private void OnApplyImageOverlays(object? sender, RoutedEventArgs e)
-    {
-        if (_session is null) { SetError("이미지를 먼저 불러오세요."); return; }
-        if (!EditCanvas.Children.OfType<OverlayItem>().Any()) { SetError("적용할 객체가 없습니다."); return; }
-        try { BakeImageOverlays(); RefreshPreview(); SetStatus("적용 완료"); }
-        catch (Exception ex) { SetError(ex.Message); }
-    }
-
     private void OnDeleteImageOverlay(object? sender, RoutedEventArgs e)
     {
         if (!DeleteSelectedImageOverlay()) SetError("삭제할 객체를 선택하세요.");
@@ -921,14 +913,6 @@ public partial class MainWindow : Window
             PdfCanvas.Children.Remove(oi);
         }
         _selectedPdfOverlay = null;
-    }
-
-    private void OnApplyPdfOverlays(object? sender, RoutedEventArgs e)
-    {
-        if (_pdfSession is null) { SetError("PDF를 먼저 불러오세요."); return; }
-        if (!PdfCanvas.Children.OfType<OverlayItem>().Any()) { SetError("적용할 객체가 없습니다."); return; }
-        try { BakePdfOverlays(); RenderCurrentPdfPage(); SetStatus("적용 완료"); }
-        catch (Exception ex) { SetError(ex.Message); }
     }
 
     private void OnDeletePdfOverlay(object? sender, RoutedEventArgs e)
