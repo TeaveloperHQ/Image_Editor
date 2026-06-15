@@ -167,7 +167,8 @@
                 <DockPanel Margin="8">
 
                     <!-- 우측 도구 패널 -->
-                    <ScrollViewer DockPanel.Dock="Right" Width="250" Margin="8,0,0,0">
+                    <ScrollViewer DockPanel.Dock="Right" Width="260" Margin="8,0,0,0"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="10">
                             <StackPanel Classes="row">
                                 <Button Content="불러오기" Click="OnEditLoad" />
@@ -176,21 +177,21 @@
 
                             <Separator />
                             <TextBlock Text="회전 / 반전" FontWeight="Bold" />
-                            <StackPanel Classes="row">
-                                <Button Content="↺ 90°" Click="OnEditRotateLeft" />
-                                <Button Content="↻ 90°" Click="OnEditRotateRight" />
-                                <Button Content="좌우" Click="OnEditFlipH" />
-                                <Button Content="상하" Click="OnEditFlipV" />
-                            </StackPanel>
+                            <UniformGrid Columns="2">
+                                <Button Content="↺ 90°" Click="OnEditRotateLeft" Margin="0,0,4,4" />
+                                <Button Content="↻ 90°" Click="OnEditRotateRight" Margin="0,0,0,4" />
+                                <Button Content="좌우 반전" Click="OnEditFlipH" Margin="0,0,4,0" />
+                                <Button Content="상하 반전" Click="OnEditFlipV" />
+                            </UniformGrid>
 
                             <Separator />
                             <TextBlock Text="작업 모드" FontWeight="Bold" />
-                            <WrapPanel>
-                                <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" IsChecked="True" Margin="0,0,10,4" />
-                                <RadioButton x:Name="ModeText" GroupName="EditMode" Content="텍스트" Margin="0,0,10,4" />
-                                <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" Margin="0,0,10,4" />
-                                <RadioButton x:Name="ModeStamp" GroupName="EditMode" Content="도장" Margin="0,0,10,4" />
-                            </WrapPanel>
+                            <UniformGrid Columns="2">
+                                <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" IsChecked="True" Margin="0,0,0,4" />
+                                <RadioButton x:Name="ModeText" GroupName="EditMode" Content="텍스트" Margin="0,0,0,4" />
+                                <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" />
+                                <RadioButton x:Name="ModeStamp" GroupName="EditMode" Content="도장" />
+                            </UniformGrid>
 
                             <!-- 자르기 -->
                             <StackPanel Spacing="6" IsVisible="{Binding #ModeCrop.IsChecked}">
@@ -313,7 +314,8 @@
             <TabItem Header="PDF 편집">
                 <DockPanel Margin="8">
 
-                    <ScrollViewer DockPanel.Dock="Right" Width="270" Margin="8,0,0,0">
+                    <ScrollViewer DockPanel.Dock="Right" Width="270" Margin="8,0,0,0"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                         <StackPanel Spacing="10">
                             <StackPanel Classes="row">
                                 <Button Content="불러오기" Click="OnPdfEditLoad" />

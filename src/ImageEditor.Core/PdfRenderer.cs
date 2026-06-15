@@ -2,6 +2,7 @@ using Docnet.Core;
 using Docnet.Core.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 
 namespace ImageEditor.Core;
 
@@ -30,9 +31,14 @@ public static class PdfRenderer
         var h = pageReader.GetPageHeight();
         var bgra = pageReader.GetImage(); // BGRA, w*h*4
 
-        using var image = Image.LoadPixelData<Bgra32>(bgra, w, h);
+        using var rendered = Image.LoadPixelData<Bgra32>(bgra, w, h);
+
+        // PDFium 은 배경을 투명하게 렌더하므로, 흰 종이 위에 합성해 실제 문서처럼 보이게 합니다.
+        using var canvas = new Image<Rgba32>(w, h, new Rgba32(255, 255, 255, 255));
+        canvas.Mutate(ctx => ctx.DrawImage(rendered, 1f));
+
         using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
+        canvas.SaveAsPng(ms);
 
         return new RenderedPage(ms.ToArray(), w, h, w / scaling, h / scaling);
     }
