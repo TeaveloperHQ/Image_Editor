@@ -374,6 +374,8 @@
                                     <ComboBox x:Name="StampFontCombo" Width="150" />
                                     <Button Content="폰트 추가…" Click="OnAddFont" />
                                 </StackPanel>
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="* 전서체 등 도장 전용 글씨체를 쓰려면 '폰트 추가…'로 해당 .ttf/.otf 파일을 불러와 목록에서 선택하세요. (기본 글꼴로도 충분합니다)" />
                                 <StackPanel Classes="row">
                                     <TextBlock Text="모양" VerticalAlignment="Center" />
                                     <RadioButton x:Name="StampShapeAuto" GroupName="StampShape" Content="자동" IsChecked="True" />
