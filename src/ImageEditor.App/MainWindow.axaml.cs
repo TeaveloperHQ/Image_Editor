@@ -186,6 +186,8 @@ public partial class MainWindow : Window
 
     private void SetError(string message) => StatusText.Text = "⚠ " + message;
 
+    private static string HexOf(Avalonia.Media.Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+
     private async Task<string?> PickOpenFileAsync(string title, FilePickerFileType type)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -749,7 +751,7 @@ public partial class MainWindow : Window
         var text = TextContent.Text ?? "";
         if (string.IsNullOrEmpty(text)) { SetError("넣을 텍스트를 입력하세요."); return; }
         if (!double.TryParse(TextSize.Text, out var sizeImg) || sizeImg <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
-        var item = OverlayItem.CreateText(text, (FontCombo.SelectedItem as string) ?? "", sizeImg * _displayScale, TextColor.Text ?? "#000000");
+        var item = OverlayItem.CreateText(text, (FontCombo.SelectedItem as string) ?? "", sizeImg * _displayScale, HexOf(TextColor.Color));
         AddOverlay(EditCanvas, p, item, isPdf: false);
         SetStatus("객체 추가됨 — 드래그로 이동, 모서리로 크기조절 후 '적용'");
     }
@@ -951,7 +953,7 @@ public partial class MainWindow : Window
         var text = PdfTextContent.Text ?? "";
         if (string.IsNullOrEmpty(text)) { SetError("넣을 텍스트를 입력하세요."); return; }
         if (!double.TryParse(PdfTextSize.Text, out var sizePt) || sizePt <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
-        var item = OverlayItem.CreateText(text, (PdfFontCombo.SelectedItem as string) ?? "", sizePt * PdfFactor(), PdfTextColor.Text ?? "#000000");
+        var item = OverlayItem.CreateText(text, (PdfFontCombo.SelectedItem as string) ?? "", sizePt * PdfFactor(), HexOf(PdfTextColor.Color));
         AddOverlay(PdfCanvas, p, item, isPdf: true);
         SetStatus("객체 추가됨 — 드래그로 이동, 모서리로 크기조절 후 '적용'");
     }

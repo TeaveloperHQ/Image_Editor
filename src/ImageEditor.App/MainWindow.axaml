@@ -212,7 +212,7 @@
                                     <TextBlock Text="크기" VerticalAlignment="Center" />
                                     <TextBox x:Name="TextSize" Width="60" Text="32" />
                                     <TextBlock Text="색상" VerticalAlignment="Center" />
-                                    <TextBox x:Name="TextColor" Width="90" Text="#FF0000" />
+                                    <ColorPicker x:Name="TextColor" Color="Red" />
                                 </StackPanel>
                             </StackPanel>
 
@@ -302,7 +302,7 @@
                                     <TextBlock Text="크기" VerticalAlignment="Center" />
                                     <TextBox x:Name="PdfTextSize" Width="55" Text="24" />
                                     <TextBlock Text="색상" VerticalAlignment="Center" />
-                                    <TextBox x:Name="PdfTextColor" Width="85" Text="#FF0000" />
+                                    <ColorPicker x:Name="PdfTextColor" Color="Red" />
                                 </StackPanel>
                             </StackPanel>
 
