@@ -396,7 +396,7 @@
 
                             <!-- 스캔 투명화 -->
                             <StackPanel Spacing="6" IsVisible="{Binding #StampFromScan.IsChecked}">
-                                <TextBlock Text="스캔한 직인의 흰 배경을 투명하게 만듭니다." Foreground="#888" TextWrapping="Wrap" />
+                                <TextBlock Text="스캔 이미지를 고르면 흰 배경이 자동으로 투명해집니다. 아래 값을 조절하면 미리보기에 바로 반영됩니다." Foreground="#888" TextWrapping="Wrap" />
                                 <Button Content="스캔 이미지 선택…" Click="OnPickStampScan" HorizontalAlignment="Left" />
                                 <TextBlock x:Name="StampScanName" Foreground="#888" Text="(선택 안 됨)" />
                                 <StackPanel Classes="row">
@@ -416,7 +416,6 @@
                                 </StackPanel>
                                 <TextBlock Foreground="#888" TextWrapping="Wrap"
                                            Text="* 색 통일: 켜면 번지거나 바랜 잉크를 선택한 색으로 균일하게 보정합니다. 끄면 원본 색을 그대로 둡니다." />
-                                <Button Content="배경 투명화" Click="OnMakeStampFromScan" HorizontalAlignment="Left" />
                             </StackPanel>
 
                             <Separator />

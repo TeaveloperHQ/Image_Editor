@@ -73,6 +73,11 @@ public partial class MainWindow : Window
         ReloadFontCombo(null);
         LoadStampWatermark();
         KeyDown += OnGlobalKeyDown;
+
+        // 스캔 투명화: 슬라이더/색 통일 변경을 미리보기에 실시간 반영
+        StampThreshold.ValueChanged += (_, _) => UpdateStampFromScan();
+        StampRecolorOn.IsCheckedChanged += (_, _) => UpdateStampFromScan();
+        StampRecolorCombo.SelectionChanged += (_, _) => UpdateStampFromScan();
     }
 
     // 미리보기 배경에 teaveloper 엠블럼을 깔아둠(도장 투명 확인 + 빈 화면 장식)
@@ -413,13 +418,13 @@ public partial class MainWindow : Window
         if (path is null) return;
         _stampScanPath = path;
         StampScanName.Text = Path.GetFileName(path);
-        try { StampPreview.Source = new Bitmap(path); } catch (Exception ex) { SetError(ex.Message); }
-        StampReady.IsChecked = false; // 아직 투명화 전
+        UpdateStampFromScan(); // 선택 즉시 자동 투명화
     }
 
-    private void OnMakeStampFromScan(object? sender, RoutedEventArgs e)
+    // 슬라이더/색 통일 변경 시 미리보기에 실시간 반영
+    private void UpdateStampFromScan()
     {
-        if (_stampScanPath is null || !File.Exists(_stampScanPath)) { SetError("먼저 스캔 이미지를 선택하세요."); return; }
+        if (_stampScanPath is null || !File.Exists(_stampScanPath)) return;
         try
         {
             var threshold = (int)Math.Round(StampThreshold.Value);
