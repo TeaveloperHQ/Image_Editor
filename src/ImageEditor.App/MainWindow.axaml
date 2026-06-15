@@ -253,6 +253,8 @@
                                             <ComboBoxItem>푸른색</ComboBoxItem>
                                         </ComboBox>
                                     </StackPanel>
+                                    <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                               Text="* 4자 이상(단체명)은 모양 선택과 무관하게 사각 직인으로 만들어집니다." />
                                     <Button Content="도장 만들기" Click="OnMakeStamp" HorizontalAlignment="Left" />
                                 </StackPanel>
 

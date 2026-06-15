@@ -49,6 +49,38 @@ public class StampTests : IDisposable
     }
 
     [Fact]
+    public void FourOrMoreChars_ForcedToSquare_EvenIfCircleRequested()
+    {
+        var family = new FontCatalog().Resolve(null);
+
+        // 4자인데 원형을 요청 → 규칙상 사각형으로 만들어져야 함
+        var png = StampMaker.CreateTextStampPng("한국대학", family, "#000000", StampShape.Circle, 320);
+
+        using var img = Image.Load<Rgba32>(png);
+        // 사각형 테두리는 모서리 부근(≈16px)에 잉크가 있음. 원형이면 비어 있음.
+        var cornerInk = false;
+        for (var y = 8; y < 26 && !cornerInk; y++)
+            for (var x = 8; x < 26; x++)
+                if (img[x, y].A > 100) { cornerInk = true; break; }
+        Assert.True(cornerInk, "4자 이상은 사각형 직인이어야 합니다(모서리 테두리 존재).");
+    }
+
+    [Fact]
+    public void ThreeChars_KeepsCircle_WhenCircleRequested()
+    {
+        var family = new FontCatalog().Resolve(null);
+        var png = StampMaker.CreateTextStampPng("홍길동", family, "#000000", StampShape.Circle, 320);
+
+        using var img = Image.Load<Rgba32>(png);
+        // 원형이면 모서리 부근은 비어 있어야 함
+        var cornerInk = false;
+        for (var y = 8; y < 24 && !cornerInk; y++)
+            for (var x = 8; x < 24; x++)
+                if (img[x, y].A > 100) { cornerInk = true; break; }
+        Assert.False(cornerInk, "3자 원형 요청은 원형으로 유지되어야 합니다(모서리 비어 있음).");
+    }
+
+    [Fact]
     public void MakeTransparent_RemovesWhite_KeepsInk()
     {
         // 흰 배경 + 가운데 빨간 사각형
