@@ -311,6 +311,8 @@
                                             TickFrequency="10" IsSnapToTickEnabled="True" />
                                     <TextBlock Text="{Binding #StampThreshold.Value}" VerticalAlignment="Center" />
                                 </StackPanel>
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="* 값을 높일수록 옅은 부분까지 더 지웁니다. 잉크가 같이 지워지면 낮추세요." />
                                 <StackPanel Classes="row">
                                     <CheckBox x:Name="StampRecolorOn" Content="색 통일" />
                                     <ComboBox x:Name="StampRecolorCombo" Width="90" SelectedIndex="0">
@@ -318,6 +320,8 @@
                                         <ComboBoxItem>푸른색</ComboBoxItem>
                                     </ComboBox>
                                 </StackPanel>
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="* 색 통일: 켜면 번지거나 바랜 잉크를 선택한 색으로 균일하게 보정합니다. 끄면 원본 색을 그대로 둡니다." />
                                 <Button Content="배경 투명화" Click="OnMakeStampFromScan" HorizontalAlignment="Left" />
                             </StackPanel>
 
