@@ -75,14 +75,17 @@ public partial class MainWindow : Window
         KeyDown += OnGlobalKeyDown;
     }
 
-    // 도장 미리보기 배경에 teaveloper 엠블럼을 깔아 투명 영역을 확인할 수 있게 함
+    // 미리보기 배경에 teaveloper 엠블럼을 깔아둠(도장 투명 확인 + 빈 화면 장식)
     private void LoadStampWatermark()
     {
         try
         {
             var asm = typeof(MainWindow).Assembly.GetName().Name;
             using var s = AssetLoader.Open(new Uri($"avares://{asm}/Assets/teaveloper-emblem.png"));
-            StampWatermark.Source = new Bitmap(s);
+            var emblem = new Bitmap(s);
+            StampWatermark.Source = emblem;
+            EditWatermark.Source = emblem;
+            PdfWatermark.Source = emblem;
         }
         catch { /* 리소스 없으면 무시 */ }
     }

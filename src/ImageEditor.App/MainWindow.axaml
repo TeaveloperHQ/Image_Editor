@@ -242,21 +242,113 @@
                     </ScrollViewer>
 
                     <!-- 미리보기 -->
-                    <Border Background="#252525" CornerRadius="4">
-                        <ScrollViewer x:Name="EditScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                            <LayoutTransformControl x:Name="EditZoom" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Canvas x:Name="EditCanvas" Background="Transparent"
-                                        PointerPressed="OnCanvasPressed"
-                                        PointerMoved="OnCanvasMoved"
-                                        PointerReleased="OnCanvasReleased"
-                                        PointerWheelChanged="OnEditWheel">
-                                    <Image x:Name="EditImage" Canvas.Left="0" Canvas.Top="0" />
-                                    <Rectangle x:Name="CropRect" IsVisible="False"
-                                               Stroke="#00B4FF" StrokeThickness="1.5"
-                                               StrokeDashArray="4,3" Fill="#3300B4FF" />
-                                </Canvas>
-                            </LayoutTransformControl>
-                        </ScrollViewer>
+                    <Border Background="#ECEEF2" CornerRadius="4">
+                        <Grid>
+                            <Image x:Name="EditWatermark" Opacity="0.08" Stretch="Uniform" Margin="90"
+                                   IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <ScrollViewer x:Name="EditScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                <LayoutTransformControl x:Name="EditZoom" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas x:Name="EditCanvas" Background="Transparent"
+                                            PointerPressed="OnCanvasPressed"
+                                            PointerMoved="OnCanvasMoved"
+                                            PointerReleased="OnCanvasReleased"
+                                            PointerWheelChanged="OnEditWheel">
+                                        <Image x:Name="EditImage" Canvas.Left="0" Canvas.Top="0" />
+                                        <Rectangle x:Name="CropRect" IsVisible="False"
+                                                   Stroke="#00B4FF" StrokeThickness="1.5"
+                                                   StrokeDashArray="4,3" Fill="#3300B4FF" />
+                                    </Canvas>
+                                </LayoutTransformControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                </DockPanel>
+            </TabItem>
+
+            <!-- ========== PDF 편집 ========== -->
+            <TabItem x:Name="PdfEditTab" Header="PDF 편집">
+                <DockPanel Margin="8">
+
+                    <ScrollViewer DockPanel.Dock="Right" Width="270" Margin="8,0,0,0"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="10">
+                            <StackPanel Classes="row">
+                                <Button Content="불러오기" Click="OnPdfEditLoad" />
+                                <Button Content="저장…" Click="OnPdfEditSave" />
+                            </StackPanel>
+
+                            <Separator />
+                            <TextBlock Text="페이지" FontWeight="Bold" />
+                            <StackPanel Classes="row">
+                                <Button Content="◀ 이전" Click="OnPdfPrevPage" />
+                                <TextBlock x:Name="PdfPageLabel" Text="- / -" VerticalAlignment="Center" MinWidth="60"
+                                           HorizontalAlignment="Center" TextAlignment="Center" />
+                                <Button Content="다음 ▶" Click="OnPdfNextPage" />
+                            </StackPanel>
+
+                            <Separator />
+                            <TextBlock Text="얹을 내용" FontWeight="Bold" />
+                            <StackPanel Classes="row">
+                                <RadioButton x:Name="ModePdfText" GroupName="PdfMode" Content="텍스트" />
+                                <RadioButton x:Name="ModePdfImage" GroupName="PdfMode" Content="이미지·서명" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="6" IsVisible="{Binding #ModePdfText.IsChecked}">
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="내용·서식을 정하고 페이지에서 원하는 위치를 클릭하세요." />
+                                <TextBox x:Name="PdfTextContent" Watermark="넣을 텍스트" Text="확인" />
+                                <StackPanel Classes="row">
+                                    <ComboBox x:Name="PdfFontCombo" Width="150" />
+                                    <Button Content="폰트 추가…" Click="OnPdfAddFont" />
+                                </StackPanel>
+                                <StackPanel Classes="row">
+                                    <TextBlock Text="크기" VerticalAlignment="Center" />
+                                    <TextBox x:Name="PdfTextSize" Width="55" Text="24" />
+                                    <TextBlock Text="색상" VerticalAlignment="Center" />
+                                    <TextBox x:Name="PdfTextColor" Width="85" Text="#FF0000" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Spacing="6" IsVisible="{Binding #ModePdfImage.IsChecked}">
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="이미지/서명 파일을 고르고 페이지에서 위치를 클릭하세요. (너비 0 = 원본)" />
+                                <Button Content="이미지 선택…" Click="OnPickPdfOverlay" />
+                                <TextBlock x:Name="PdfOverlayName" Foreground="#888" Text="(선택 안 됨)" />
+                                <StackPanel Classes="row">
+                                    <TextBlock Text="너비" VerticalAlignment="Center" />
+                                    <TextBox x:Name="PdfOverlayW" Width="70" Text="120" />
+                                    <TextBlock Text="pt" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Separator />
+                            <StackPanel Classes="row">
+                                <Button Content="적용(굽기)" Click="OnApplyPdfOverlays" />
+                                <Button Content="선택 삭제" Click="OnDeletePdfOverlay" />
+                            </StackPanel>
+                            <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                       Text="* 객체는 드래그 이동·모서리 크기조절 후 '적용'. 페이지를 넘기거나 저장하면 자동 확정됩니다." />
+                            <TextBlock x:Name="PdfEditInfo" Foreground="#888" Text="PDF를 불러오세요." TextWrapping="Wrap" />
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Border Background="#ECEEF2" CornerRadius="4">
+                        <Grid>
+                            <Image x:Name="PdfWatermark" Opacity="0.08" Stretch="Uniform" Margin="90"
+                                   IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            <ScrollViewer x:Name="PdfScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                <LayoutTransformControl x:Name="PdfZoom" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Canvas x:Name="PdfCanvas" Background="Transparent"
+                                            PointerPressed="OnPdfCanvasPressed"
+                                            PointerMoved="OnPdfCanvasMoved"
+                                            PointerReleased="OnPdfCanvasReleased"
+                                            PointerWheelChanged="OnPdfWheel">
+                                        <Image x:Name="PdfPageImage" Canvas.Left="0" Canvas.Top="0" />
+                                    </Canvas>
+                                </LayoutTransformControl>
+                            </ScrollViewer>
+                        </Grid>
                     </Border>
 
                 </DockPanel>
@@ -345,90 +437,6 @@
                             <Image x:Name="StampPreview" Stretch="Uniform" Margin="24"
                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
-                    </Border>
-
-                </DockPanel>
-            </TabItem>
-
-            <!-- ========== PDF 편집 ========== -->
-            <TabItem x:Name="PdfEditTab" Header="PDF 편집">
-                <DockPanel Margin="8">
-
-                    <ScrollViewer DockPanel.Dock="Right" Width="270" Margin="8,0,0,0"
-                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Spacing="10">
-                            <StackPanel Classes="row">
-                                <Button Content="불러오기" Click="OnPdfEditLoad" />
-                                <Button Content="저장…" Click="OnPdfEditSave" />
-                            </StackPanel>
-
-                            <Separator />
-                            <TextBlock Text="페이지" FontWeight="Bold" />
-                            <StackPanel Classes="row">
-                                <Button Content="◀ 이전" Click="OnPdfPrevPage" />
-                                <TextBlock x:Name="PdfPageLabel" Text="- / -" VerticalAlignment="Center" MinWidth="60"
-                                           HorizontalAlignment="Center" TextAlignment="Center" />
-                                <Button Content="다음 ▶" Click="OnPdfNextPage" />
-                            </StackPanel>
-
-                            <Separator />
-                            <TextBlock Text="얹을 내용" FontWeight="Bold" />
-                            <StackPanel Classes="row">
-                                <RadioButton x:Name="ModePdfText" GroupName="PdfMode" Content="텍스트" />
-                                <RadioButton x:Name="ModePdfImage" GroupName="PdfMode" Content="이미지·서명" />
-                            </StackPanel>
-
-                            <StackPanel Spacing="6" IsVisible="{Binding #ModePdfText.IsChecked}">
-                                <TextBlock Foreground="#888" TextWrapping="Wrap"
-                                           Text="내용·서식을 정하고 페이지에서 원하는 위치를 클릭하세요." />
-                                <TextBox x:Name="PdfTextContent" Watermark="넣을 텍스트" Text="확인" />
-                                <StackPanel Classes="row">
-                                    <ComboBox x:Name="PdfFontCombo" Width="150" />
-                                    <Button Content="폰트 추가…" Click="OnPdfAddFont" />
-                                </StackPanel>
-                                <StackPanel Classes="row">
-                                    <TextBlock Text="크기" VerticalAlignment="Center" />
-                                    <TextBox x:Name="PdfTextSize" Width="55" Text="24" />
-                                    <TextBlock Text="색상" VerticalAlignment="Center" />
-                                    <TextBox x:Name="PdfTextColor" Width="85" Text="#FF0000" />
-                                </StackPanel>
-                            </StackPanel>
-
-                            <StackPanel Spacing="6" IsVisible="{Binding #ModePdfImage.IsChecked}">
-                                <TextBlock Foreground="#888" TextWrapping="Wrap"
-                                           Text="이미지/서명 파일을 고르고 페이지에서 위치를 클릭하세요. (너비 0 = 원본)" />
-                                <Button Content="이미지 선택…" Click="OnPickPdfOverlay" />
-                                <TextBlock x:Name="PdfOverlayName" Foreground="#888" Text="(선택 안 됨)" />
-                                <StackPanel Classes="row">
-                                    <TextBlock Text="너비" VerticalAlignment="Center" />
-                                    <TextBox x:Name="PdfOverlayW" Width="70" Text="120" />
-                                    <TextBlock Text="pt" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </StackPanel>
-
-                            <Separator />
-                            <StackPanel Classes="row">
-                                <Button Content="적용(굽기)" Click="OnApplyPdfOverlays" />
-                                <Button Content="선택 삭제" Click="OnDeletePdfOverlay" />
-                            </StackPanel>
-                            <TextBlock Foreground="#888" TextWrapping="Wrap"
-                                       Text="* 객체는 드래그 이동·모서리 크기조절 후 '적용'. 페이지를 넘기거나 저장하면 자동 확정됩니다." />
-                            <TextBlock x:Name="PdfEditInfo" Foreground="#888" Text="PDF를 불러오세요." TextWrapping="Wrap" />
-                        </StackPanel>
-                    </ScrollViewer>
-
-                    <Border Background="#252525" CornerRadius="4">
-                        <ScrollViewer x:Name="PdfScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                            <LayoutTransformControl x:Name="PdfZoom" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Canvas x:Name="PdfCanvas" Background="Transparent"
-                                        PointerPressed="OnPdfCanvasPressed"
-                                        PointerMoved="OnPdfCanvasMoved"
-                                        PointerReleased="OnPdfCanvasReleased"
-                                        PointerWheelChanged="OnPdfWheel">
-                                    <Image x:Name="PdfPageImage" Canvas.Left="0" Canvas.Top="0" />
-                                </Canvas>
-                            </LayoutTransformControl>
-                        </ScrollViewer>
                     </Border>
 
                 </DockPanel>
