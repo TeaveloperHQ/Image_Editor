@@ -6,31 +6,23 @@
       <stop offset="50%"  stop-color="#8b5cf6"/>
       <stop offset="100%" stop-color="#06b6d4"/>
     </linearGradient>
-    <clipPath id="frame"><rect x="244" y="226" width="430" height="412" rx="46"/></clipPath>
+    <clipPath id="frame"><rect x="216" y="216" width="592" height="592" rx="58"/></clipPath>
   </defs>
 
   <!-- 브랜드 라운드 사각형 -->
   <rect x="112" y="112" width="800" height="800" rx="184" fill="url(#g)"/>
 
-  <!-- 사진 프레임 + 그 안에 teaveloper 엠블럼(머리 원 + 몸통 삼각) -->
+  <!-- 중앙에 꽉 찬 사진 액자 + teaveloper 엠블럼 -->
   <g clip-path="url(#frame)">
-    <rect x="244" y="226" width="430" height="412" fill="#FFFFFF" opacity="0.16"/>
-    <circle cx="459" cy="360" r="60" fill="#FFFFFF"/>
-    <path d="M459 396 Q459 396 459 396 L383 582 L535 582 Z" fill="#FFFFFF"/>
+    <rect x="216" y="216" width="592" height="592" fill="#FFFFFF" opacity="0.16"/>
+    <circle cx="512" cy="424" r="92" fill="#FFFFFF"/>
+    <path d="M512 474 L388 720 L636 720 Z" fill="#FFFFFF"/>
   </g>
-  <rect x="244" y="226" width="430" height="412" rx="46" fill="none" stroke="#FFFFFF" stroke-width="26"/>
+  <rect x="216" y="216" width="592" height="592" rx="58" fill="none" stroke="#FFFFFF" stroke-width="30"/>
 
-  <!-- 깔끔한 편집 연필 (우하단, 팁이 좌상 방향) -->
-  <g transform="translate(688 700) rotate(-45)">
-    <!-- 흑심 -->
-    <path d="M-168 0 L-132 -22 L-132 22 Z" fill="#3730a3"/>
-    <!-- 나무 깎인 부분 -->
-    <path d="M-132 -22 L-132 22 L-96 30 L-96 -30 Z" fill="#F1ECFF"/>
-    <!-- 몸통 -->
-    <rect x="-96" y="-30" width="208" height="60" fill="#FFFFFF"/>
-    <!-- 금속 띠 -->
-    <rect x="112" y="-30" width="22" height="60" fill="#C9C2F0"/>
-    <!-- 지우개 -->
-    <rect x="134" y="-30" width="34" height="60" rx="16" fill="#FFFFFF"/>
+  <!-- 간단한 편집 연필 (우하단, 좌상 방향) -->
+  <g transform="translate(744 744) rotate(-45)">
+    <rect x="-120" y="-30" width="276" height="60" rx="22" fill="#FFFFFF" stroke="#4f46b8" stroke-width="8"/>
+    <path d="M-120 -22 L-180 0 L-120 22 Z" fill="#3730a3"/>
   </g>
 </svg>
