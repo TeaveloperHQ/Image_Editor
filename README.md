@@ -13,6 +13,7 @@ Avalonia UI(.NET 8) 기반이라 Windows에서 실행되며, 개발/테스트는
 | PDF 분해 | 모든 페이지를 한 장씩 개별 파일로 분리 |
 | PDF 페이지 추출 | `1-3,5,8-10` 형식으로 원하는 페이지만 추출 |
 | PDF 크기/용량 | ① 용량 줄이기(% 슬라이더 하나로 간단하게) ② 용지 크기 변경(A4/A3/A5/Letter/Legal) |
+| PDF 편집 | 페이지를 보면서 원하는 위치에 텍스트·이미지·서명 얹기 (페이지 넘기기 지원) |
 
 ### 이미지 편집 사용법
 
@@ -39,6 +40,9 @@ Image_Editor/
 │  │  ├─ FontCatalog.cs      #   시스템·사용자 폰트 관리
 │  │  ├─ PdfService.cs       #   PDF 결합/분해/추출/용지크기
 │  │  ├─ PdfCompressor.cs    #   PDF 용량 줄이기 (이미지 재압축)
+│  │  ├─ PdfRenderer.cs      #   PDF 페이지 → 이미지 렌더 (PDFium/Docnet)
+│  │  ├─ PdfEditSession.cs   #   PDF에 텍스트·이미지·서명 얹기
+│  │  ├─ PdfFontResolver.cs  #   PdfSharp 텍스트용 폰트 공급
 │  │  └─ PageRange.cs        #   "1-3,5" 페이지 범위 파서
 │  └─ ImageEditor.App/    # Avalonia GUI
 └─ tests/
@@ -51,6 +55,7 @@ Image_Editor/
 
 - [Avalonia UI](https://avaloniaui.net/) — 크로스플랫폼 데스크톱 UI
 - [PDFsharp](https://www.pdfsharp.net/) — PDF 조작 (MIT)
+- [Docnet.Core](https://github.com/GowenGit/docnet) — PDF 페이지 렌더링(PDFium 래퍼, MIT)
 - [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp) 3.1.x — 이미지 처리 (오픈소스/개인 사용 무료)
 
 ## 빌드 & 실행

@@ -40,6 +40,14 @@ public partial class MainWindow : Window
     private Avalonia.Point _cropStart;
     private bool _dragging;
 
+    // PDF 편집 상태
+    private const double PdfRenderScaling = 2.0;
+    private PdfEditSession? _pdfSession;
+    private int _pdfPageIndex;
+    private double _pdfRenderScale = 1.0; // 렌더 픽셀 / 포인트
+    private double _pdfFit = 1.0;         // 표시 픽셀 / 렌더 픽셀
+    private string? _pdfOverlayPath;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -481,6 +489,132 @@ public partial class MainWindow : Window
             _session.AddImage(_overlayPath, ix, iy, w > 0 ? w : null, h > 0 ? h : null);
             RefreshPreview();
             SetStatus($"그림 추가 @ ({ix},{iy})");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    // ---------- PDF 편집 ----------
+
+    private void ReloadPdfFontCombo(string? select)
+    {
+        if (_pdfSession is null) return;
+        var names = _pdfSession.Fonts.Families;
+        PdfFontCombo.ItemsSource = names;
+        var target = select ?? _pdfSession.Fonts.DefaultFamily;
+        PdfFontCombo.SelectedItem = names.Contains(target) ? target : names.FirstOrDefault();
+    }
+
+    private void RenderCurrentPdfPage()
+    {
+        if (_pdfSession is null) return;
+
+        var rp = _pdfSession.RenderPage(_pdfPageIndex, PdfRenderScaling);
+        using (var ms = new MemoryStream(rp.Png))
+            PdfPageImage.Source = new Bitmap(ms);
+
+        const double maxW = 680, maxH = 560;
+        _pdfFit = Math.Min(1.0, Math.Min(maxW / rp.PixelWidth, maxH / rp.PixelHeight));
+        _pdfRenderScale = rp.Scale;
+
+        var dw = rp.PixelWidth * _pdfFit;
+        var dh = rp.PixelHeight * _pdfFit;
+        PdfPageImage.Width = dw;
+        PdfPageImage.Height = dh;
+        PdfCanvas.Width = dw;
+        PdfCanvas.Height = dh;
+
+        PdfPageLabel.Text = $"{_pdfPageIndex + 1} / {_pdfSession.PageCount}";
+        var (wpt, hpt) = _pdfSession.PageSize(_pdfPageIndex);
+        PdfEditInfo.Text = $"페이지 크기 {wpt:0}×{hpt:0} pt";
+    }
+
+    private (double X, double Y) ToPagePoint(Avalonia.Point p) =>
+        (p.X / (_pdfFit * _pdfRenderScale), p.Y / (_pdfFit * _pdfRenderScale));
+
+    private async void OnPdfEditLoad(object? sender, RoutedEventArgs e)
+    {
+        var path = await PickOpenFileAsync("편집할 PDF 선택", PdfType);
+        if (path is null) return;
+        try
+        {
+            _pdfSession?.Dispose();
+            _pdfSession = PdfEditSession.Load(path);
+            _pdfPageIndex = 0;
+            ReloadPdfFontCombo(null);
+            RenderCurrentPdfPage();
+            SetStatus($"불러옴: {path}");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private async void OnPdfEditSave(object? sender, RoutedEventArgs e)
+    {
+        if (_pdfSession is null) { SetError("저장할 PDF가 없습니다."); return; }
+        var output = await PickSaveFileAsync("편집한 PDF 저장", "edited.pdf", PdfType);
+        if (output is null) return;
+        try { _pdfSession.Save(output); SetStatus($"저장: {output}"); }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private void OnPdfPrevPage(object? sender, RoutedEventArgs e)
+    {
+        if (_pdfSession is null || _pdfPageIndex <= 0) return;
+        _pdfPageIndex--;
+        RenderCurrentPdfPage();
+    }
+
+    private void OnPdfNextPage(object? sender, RoutedEventArgs e)
+    {
+        if (_pdfSession is null || _pdfPageIndex >= _pdfSession.PageCount - 1) return;
+        _pdfPageIndex++;
+        RenderCurrentPdfPage();
+    }
+
+    private async void OnPdfAddFont(object? sender, RoutedEventArgs e)
+    {
+        if (_pdfSession is null) { SetError("PDF를 먼저 불러오세요."); return; }
+        var path = await PickOpenFileAsync("폰트 파일 선택", FontType);
+        if (path is null) return;
+        try
+        {
+            var name = _pdfSession.Fonts.RegisterFontFile(path);
+            ReloadPdfFontCombo(name);
+            SetStatus($"폰트 추가: {name}");
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private async void OnPickPdfOverlay(object? sender, RoutedEventArgs e)
+    {
+        var path = await PickOpenFileAsync("얹을 이미지/서명 선택", ImageType);
+        if (path is null) return;
+        _pdfOverlayPath = path;
+        PdfOverlayName.Text = Path.GetFileName(path);
+    }
+
+    private void OnPdfCanvasPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_pdfSession is null) { SetError("PDF를 먼저 불러오세요."); return; }
+        var (x, y) = ToPagePoint(e.GetPosition(PdfCanvas));
+
+        try
+        {
+            if (ModePdfImage.IsChecked == true)
+            {
+                if (_pdfOverlayPath is null) { SetError("먼저 얹을 이미지를 선택하세요."); return; }
+                double.TryParse(PdfOverlayW.Text, out var wpt);
+                _pdfSession.AddImage(_pdfPageIndex, _pdfOverlayPath, x, y, wpt);
+                SetStatus($"이미지 추가 @ ({x:0},{y:0}) pt");
+            }
+            else
+            {
+                var text = PdfTextContent.Text ?? "";
+                if (string.IsNullOrEmpty(text)) { SetError("넣을 텍스트를 입력하세요."); return; }
+                if (!double.TryParse(PdfTextSize.Text, out var size) || size <= 0) { SetError("글자 크기가 올바르지 않습니다."); return; }
+                _pdfSession.AddText(_pdfPageIndex, text, x, y, PdfFontCombo.SelectedItem as string, size, PdfTextColor.Text ?? "#000000");
+                SetStatus($"텍스트 추가 @ ({x:0},{y:0}) pt");
+            }
+            RenderCurrentPdfPage();
         }
         catch (Exception ex) { SetError(ex.Message); }
     }
