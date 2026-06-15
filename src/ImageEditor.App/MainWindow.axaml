@@ -185,12 +185,12 @@
 
                             <Separator />
                             <TextBlock Text="작업 모드" FontWeight="Bold" />
-                            <StackPanel Classes="row">
-                                <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" IsChecked="True" />
-                                <RadioButton x:Name="ModeText" GroupName="EditMode" Content="텍스트" />
-                                <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" />
-                                <RadioButton x:Name="ModeStamp" GroupName="EditMode" Content="도장" />
-                            </StackPanel>
+                            <WrapPanel>
+                                <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" IsChecked="True" Margin="0,0,10,4" />
+                                <RadioButton x:Name="ModeText" GroupName="EditMode" Content="텍스트" Margin="0,0,10,4" />
+                                <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" Margin="0,0,10,4" />
+                                <RadioButton x:Name="ModeStamp" GroupName="EditMode" Content="도장" Margin="0,0,10,4" />
+                            </WrapPanel>
 
                             <!-- 자르기 -->
                             <StackPanel Spacing="6" IsVisible="{Binding #ModeCrop.IsChecked}">
