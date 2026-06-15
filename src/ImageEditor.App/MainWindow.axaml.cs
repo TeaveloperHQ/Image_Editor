@@ -40,6 +40,10 @@ public partial class MainWindow : Window
     private Avalonia.Point _cropStart;
     private bool _dragging;
 
+    // 도장 만들기 상태
+    private string? _stampPath;      // 만들어진 도장 PNG(임시 파일)
+    private string? _stampScanPath;  // 투명화할 스캔 원본
+
     // PDF 편집 상태
     private const double PdfRenderScaling = 2.0;
     private PdfEditSession? _pdfSession;
@@ -324,8 +328,81 @@ public partial class MainWindow : Window
     {
         var names = _fonts.FamilyNames();
         FontCombo.ItemsSource = names;
+        StampFontCombo.ItemsSource = names;
         var target = select ?? _fonts.Resolve(null).Name;
-        FontCombo.SelectedItem = names.Contains(target) ? target : names.FirstOrDefault();
+        var chosen = names.Contains(target) ? target : names.FirstOrDefault();
+        FontCombo.SelectedItem = chosen;
+        StampFontCombo.SelectedItem = chosen;
+    }
+
+    // ---------- 도장 만들기 ----------
+
+    private static string StampColorHex(int index) => index == 1 ? "#14328C" : "#C8102E"; // 0:붉은색 1:푸른색
+
+    private void OnMakeStamp(object? sender, RoutedEventArgs e)
+    {
+        var text = StampText.Text;
+        if (string.IsNullOrWhiteSpace(text)) { SetError("도장에 넣을 글자를 입력하세요."); return; }
+        try
+        {
+            var family = _fonts.Resolve(StampFontCombo.SelectedItem as string);
+            var shape = StampShapeCombo.SelectedIndex == 1 ? StampShape.Square : StampShape.Circle;
+            var color = StampColorHex(StampColorCombo.SelectedIndex);
+            var png = StampMaker.CreateTextStampPng(text!, family, color, shape, 320);
+            StoreStamp(png);
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private async void OnPickStampScan(object? sender, RoutedEventArgs e)
+    {
+        var path = await PickOpenFileAsync("스캔한 직인 이미지 선택", ImageType);
+        if (path is null) return;
+        _stampScanPath = path;
+        StampScanName.Text = Path.GetFileName(path);
+    }
+
+    private void OnMakeStampFromScan(object? sender, RoutedEventArgs e)
+    {
+        if (_stampScanPath is null || !File.Exists(_stampScanPath)) { SetError("먼저 스캔 이미지를 선택하세요."); return; }
+        try
+        {
+            var threshold = (int)Math.Round(StampThreshold.Value);
+            string? recolor = StampRecolorOn.IsChecked == true ? StampColorHex(StampRecolorCombo.SelectedIndex) : null;
+            var png = StampMaker.MakeTransparentPng(_stampScanPath, threshold, recolor);
+            StoreStamp(png);
+        }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private void StoreStamp(byte[] png)
+    {
+        _stampPath = Path.Combine(Path.GetTempPath(), $"stamp_{Guid.NewGuid():N}.png");
+        File.WriteAllBytes(_stampPath, png);
+        StampReady.IsChecked = true;
+        StampInfo.Text = "도장이 만들어졌습니다. PNG로 저장하거나 이미지에 찍으세요.";
+        SetStatus("도장 생성 완료");
+    }
+
+    private async void OnSaveStamp(object? sender, RoutedEventArgs e)
+    {
+        if (_stampPath is null || !File.Exists(_stampPath)) { SetError("먼저 도장을 만드세요."); return; }
+        var output = await PickSaveFileAsync("도장 PNG 저장", "stamp.png", ImageType);
+        if (output is null) return;
+        try { File.Copy(_stampPath, output, overwrite: true); SetStatus($"저장: {output}"); }
+        catch (Exception ex) { SetError(ex.Message); }
+    }
+
+    private void OnUseStamp(object? sender, RoutedEventArgs e)
+    {
+        if (_stampPath is null || !File.Exists(_stampPath)) { SetError("먼저 도장을 만드세요."); return; }
+        if (_session is null) { SetError("도장을 찍을 이미지를 먼저 불러오세요."); return; }
+        _overlayPath = _stampPath;
+        OverlayName.Text = "(도장)";
+        OverlayW.Text = "0";
+        OverlayH.Text = "0";
+        ModeImage.IsChecked = true; // 그림 모드로 전환 → 클릭해서 찍기
+        SetStatus("미리보기를 클릭해 도장을 찍으세요.");
     }
 
     private void RefreshPreview()
