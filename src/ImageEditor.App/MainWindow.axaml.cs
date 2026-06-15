@@ -365,6 +365,14 @@ public partial class MainWindow : Window
 
     private static string StampColorHex(int index) => index == 1 ? "#14328C" : "#C8102E"; // 0:붉은색 1:푸른색
 
+    private StampShape ResolveStampShape(string text)
+    {
+        if (StampShapeCircle.IsChecked == true) return StampShape.Circle;
+        if (StampShapeSquare.IsChecked == true) return StampShape.Square;
+        // 자동: 이름(3자 이하)은 원형, 단체명(4자 이상)은 사각
+        return StampMaker.CharacterCount(text) >= 4 ? StampShape.Square : StampShape.Circle;
+    }
+
     private void OnMakeStamp(object? sender, RoutedEventArgs e)
     {
         var text = StampText.Text;
@@ -372,7 +380,7 @@ public partial class MainWindow : Window
         try
         {
             var family = _fonts.Resolve(StampFontCombo.SelectedItem as string);
-            var shape = StampShapeCombo.SelectedIndex == 1 ? StampShape.Square : StampShape.Circle;
+            var shape = ResolveStampShape(text!);
             var color = StampColorHex(StampColorCombo.SelectedIndex);
             var png = StampMaker.CreateTextStampPng(text!, family, color, shape, 320);
             StoreStamp(png);

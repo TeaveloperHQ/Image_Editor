@@ -49,20 +49,32 @@ public class StampTests : IDisposable
     }
 
     [Fact]
-    public void FourOrMoreChars_ForcedToSquare_EvenIfCircleRequested()
+    public void RequestedShape_IsHonored_RegardlessOfLength()
     {
         var family = new FontCatalog().Resolve(null);
 
-        // 4자인데 원형을 요청 → 규칙상 사각형으로 만들어져야 함
-        var png = StampMaker.CreateTextStampPng("한국대학", family, "#000000", StampShape.Circle, 320);
+        // 4자라도 요청한 모양 그대로 — 사각은 모서리에 잉크, 원형은 모서리 비어 있음
+        var square = StampMaker.CreateTextStampPng("한국대학", family, "#000000", StampShape.Square, 320);
+        var circle = StampMaker.CreateTextStampPng("한국대학", family, "#000000", StampShape.Circle, 320);
 
+        Assert.True(HasCornerInk(square), "사각 요청은 모서리 테두리가 있어야 합니다.");
+        Assert.False(HasCornerInk(circle), "원형 요청은 모서리가 비어 있어야 합니다.");
+    }
+
+    [Theory]
+    [InlineData("홍", 1)]
+    [InlineData("홍길동", 3)]
+    [InlineData("한국대학교", 5)]
+    public void CharacterCount_Works(string text, int expected)
+        => Assert.Equal(expected, StampMaker.CharacterCount(text));
+
+    private static bool HasCornerInk(byte[] png)
+    {
         using var img = Image.Load<Rgba32>(png);
-        // 사각형 테두리는 모서리 부근(≈16px)에 잉크가 있음. 원형이면 비어 있음.
-        var cornerInk = false;
-        for (var y = 8; y < 26 && !cornerInk; y++)
+        for (var y = 8; y < 26; y++)
             for (var x = 8; x < 26; x++)
-                if (img[x, y].A > 100) { cornerInk = true; break; }
-        Assert.True(cornerInk, "4자 이상은 사각형 직인이어야 합니다(모서리 테두리 존재).");
+                if (img[x, y].A > 100) return true;
+        return false;
     }
 
     [Fact]

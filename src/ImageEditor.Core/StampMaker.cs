@@ -31,9 +31,6 @@ public static class StampMaker
         var chars = SplitCharacters(text);
         var n = chars.Count;
 
-        // 4자 이상은 네모 직인 형태가 보기 좋아 자동으로 사각형으로 만듭니다.
-        if (n >= 4) shape = StampShape.Square;
-
         var cols = (int)Math.Ceiling(Math.Sqrt(n));
         var rows = (int)Math.Ceiling((double)n / cols);
 
@@ -129,6 +126,9 @@ public static class StampMaker
 
         return ToPng(image);
     }
+
+    /// <summary>도장 글자 수(자모 결합·한자 포함 텍스트 요소 단위).</summary>
+    public static int CharacterCount(string? text) => SplitCharacters(text ?? string.Empty).Count;
 
     private static IReadOnlyList<string> SplitCharacters(string text)
     {
