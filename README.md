@@ -1,7 +1,9 @@
-# Image / PDF Editor
+# Teaveloper 이미지 / PDF 편집기
 
-학교에서 자주 쓰는 **이미지·PDF 작업**을 위한 간단한 Windows 데스크톱 앱입니다.
+학교·사무에서 자주 쓰는 **이미지·PDF 작업**을 한 곳에서 처리하는 Windows 데스크톱 앱입니다.
 Avalonia UI(.NET 8) 기반이라 Windows에서 실행되며, 개발/테스트는 Linux·macOS에서도 가능합니다.
+
+📖 **사용법은 [사용 설명서(MANUAL.md)](MANUAL.md)** 를 참고하세요.
 
 ## 기능
 
