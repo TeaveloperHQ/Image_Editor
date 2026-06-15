@@ -186,11 +186,10 @@
 
                             <Separator />
                             <TextBlock Text="작업 모드" FontWeight="Bold" />
-                            <UniformGrid Columns="2">
+                            <UniformGrid Columns="3">
                                 <RadioButton x:Name="ModeCrop" GroupName="EditMode" Content="자르기" Margin="0,0,0,4" />
                                 <RadioButton x:Name="ModeText" GroupName="EditMode" Content="텍스트" Margin="0,0,0,4" />
-                                <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" />
-                                <RadioButton x:Name="ModeStamp" GroupName="EditMode" Content="도장" />
+                                <RadioButton x:Name="ModeImage" GroupName="EditMode" Content="그림" Margin="0,0,0,4" />
                             </UniformGrid>
 
                             <!-- 자르기 -->
@@ -231,62 +230,6 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <!-- 도장 만들기 -->
-                            <StackPanel Spacing="6" IsVisible="{Binding #ModeStamp.IsChecked}">
-                                <StackPanel Classes="row">
-                                    <RadioButton x:Name="StampFromText" GroupName="StampMethod" Content="글자로" IsChecked="True" />
-                                    <RadioButton x:Name="StampFromScan" GroupName="StampMethod" Content="스캔 투명화" />
-                                </StackPanel>
-
-                                <!-- 글자로 만들기 -->
-                                <StackPanel Spacing="6" IsVisible="{Binding #StampFromText.IsChecked}">
-                                    <TextBox x:Name="StampText" Watermark="한글/한자 (예: 홍길동)" Text="印" />
-                                    <ComboBox x:Name="StampFontCombo" Width="150" HorizontalAlignment="Left" />
-                                    <StackPanel Classes="row">
-                                        <TextBlock Text="모양" VerticalAlignment="Center" />
-                                        <ComboBox x:Name="StampShapeCombo" Width="80" SelectedIndex="0">
-                                            <ComboBoxItem>원형</ComboBoxItem>
-                                            <ComboBoxItem>사각</ComboBoxItem>
-                                        </ComboBox>
-                                        <TextBlock Text="색상" VerticalAlignment="Center" />
-                                        <ComboBox x:Name="StampColorCombo" Width="90" SelectedIndex="0">
-                                            <ComboBoxItem>붉은색</ComboBoxItem>
-                                            <ComboBoxItem>푸른색</ComboBoxItem>
-                                        </ComboBox>
-                                    </StackPanel>
-                                    <TextBlock Foreground="#888" TextWrapping="Wrap"
-                                               Text="* 4자 이상(단체명)은 모양 선택과 무관하게 사각 직인으로 만들어집니다." />
-                                    <Button Content="도장 만들기" Click="OnMakeStamp" HorizontalAlignment="Left" />
-                                </StackPanel>
-
-                                <!-- 스캔 투명화 -->
-                                <StackPanel Spacing="6" IsVisible="{Binding #StampFromScan.IsChecked}">
-                                    <Button Content="스캔 이미지 선택…" Click="OnPickStampScan" HorizontalAlignment="Left" />
-                                    <TextBlock x:Name="StampScanName" Foreground="#888" Text="(선택 안 됨)" />
-                                    <StackPanel Classes="row">
-                                        <TextBlock Text="배경 제거" VerticalAlignment="Center" />
-                                        <Slider x:Name="StampThreshold" Width="120" Minimum="20" Maximum="160" Value="60"
-                                                TickFrequency="10" IsSnapToTickEnabled="True" />
-                                        <TextBlock Text="{Binding #StampThreshold.Value}" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Classes="row">
-                                        <CheckBox x:Name="StampRecolorOn" Content="색 통일" />
-                                        <ComboBox x:Name="StampRecolorCombo" Width="90" SelectedIndex="0">
-                                            <ComboBoxItem>붉은색</ComboBoxItem>
-                                            <ComboBoxItem>푸른색</ComboBoxItem>
-                                        </ComboBox>
-                                    </StackPanel>
-                                    <Button Content="배경 투명화" Click="OnMakeStampFromScan" HorizontalAlignment="Left" />
-                                </StackPanel>
-
-                                <TextBlock x:Name="StampInfo" Foreground="#7CD992" Text="" TextWrapping="Wrap" />
-                                <StackPanel Classes="row" IsVisible="{Binding #StampReady.IsChecked}">
-                                    <Button Content="PNG로 저장" Click="OnSaveStamp" />
-                                    <Button Content="이미지에 찍기" Click="OnUseStamp" />
-                                </StackPanel>
-                                <CheckBox x:Name="StampReady" IsVisible="False" />
-                            </StackPanel>
-
                             <Separator />
                             <StackPanel Classes="row">
                                 <Button Content="적용(굽기)" Click="OnApplyImageOverlays" />
@@ -314,6 +257,84 @@
                                 </Canvas>
                             </LayoutTransformControl>
                         </ScrollViewer>
+                    </Border>
+
+                </DockPanel>
+            </TabItem>
+
+            <!-- ========== 도장 만들기 ========== -->
+            <TabItem Header="도장 만들기">
+                <DockPanel Margin="8">
+
+                    <ScrollViewer DockPanel.Dock="Right" Width="280" Margin="8,0,0,0"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="10">
+                            <StackPanel Classes="row">
+                                <RadioButton x:Name="StampFromText" GroupName="StampMethod" Content="글자로" IsChecked="True" />
+                                <RadioButton x:Name="StampFromScan" GroupName="StampMethod" Content="스캔 투명화" />
+                            </StackPanel>
+
+                            <!-- 글자로 만들기 -->
+                            <StackPanel Spacing="6" IsVisible="{Binding #StampFromText.IsChecked}">
+                                <TextBlock Text="이름·단체명을 입력해 도장을 만듭니다." Foreground="#888" TextWrapping="Wrap" />
+                                <TextBox x:Name="StampText" Watermark="한글/한자 (예: 홍길동)" Text="印" />
+                                <StackPanel Classes="row">
+                                    <ComboBox x:Name="StampFontCombo" Width="150" />
+                                    <Button Content="폰트 추가…" Click="OnAddFont" />
+                                </StackPanel>
+                                <StackPanel Classes="row">
+                                    <TextBlock Text="모양" VerticalAlignment="Center" />
+                                    <ComboBox x:Name="StampShapeCombo" Width="80" SelectedIndex="0">
+                                        <ComboBoxItem>원형</ComboBoxItem>
+                                        <ComboBoxItem>사각</ComboBoxItem>
+                                    </ComboBox>
+                                    <TextBlock Text="색상" VerticalAlignment="Center" />
+                                    <ComboBox x:Name="StampColorCombo" Width="90" SelectedIndex="0">
+                                        <ComboBoxItem>붉은색</ComboBoxItem>
+                                        <ComboBoxItem>푸른색</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                                <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                           Text="* 4자 이상(단체명)은 모양과 무관하게 사각 직인으로 만들어집니다." />
+                                <Button Content="도장 만들기" Click="OnMakeStamp" HorizontalAlignment="Left" />
+                            </StackPanel>
+
+                            <!-- 스캔 투명화 -->
+                            <StackPanel Spacing="6" IsVisible="{Binding #StampFromScan.IsChecked}">
+                                <TextBlock Text="스캔한 직인의 흰 배경을 투명하게 만듭니다." Foreground="#888" TextWrapping="Wrap" />
+                                <Button Content="스캔 이미지 선택…" Click="OnPickStampScan" HorizontalAlignment="Left" />
+                                <TextBlock x:Name="StampScanName" Foreground="#888" Text="(선택 안 됨)" />
+                                <StackPanel Classes="row">
+                                    <TextBlock Text="배경 제거" VerticalAlignment="Center" />
+                                    <Slider x:Name="StampThreshold" Width="120" Minimum="20" Maximum="160" Value="60"
+                                            TickFrequency="10" IsSnapToTickEnabled="True" />
+                                    <TextBlock Text="{Binding #StampThreshold.Value}" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Classes="row">
+                                    <CheckBox x:Name="StampRecolorOn" Content="색 통일" />
+                                    <ComboBox x:Name="StampRecolorCombo" Width="90" SelectedIndex="0">
+                                        <ComboBoxItem>붉은색</ComboBoxItem>
+                                        <ComboBoxItem>푸른색</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                                <Button Content="배경 투명화" Click="OnMakeStampFromScan" HorizontalAlignment="Left" />
+                            </StackPanel>
+
+                            <Separator />
+                            <StackPanel Classes="row" IsVisible="{Binding #StampReady.IsChecked}">
+                                <Button Content="PNG로 저장" Click="OnSaveStamp" />
+                            </StackPanel>
+                            <CheckBox x:Name="StampReady" IsVisible="False" />
+                            <TextBlock x:Name="StampInfo" Foreground="#7CD992" Text="" TextWrapping="Wrap" />
+                            <TextBlock Foreground="#888" TextWrapping="Wrap"
+                                       Text="* 만든 도장은 'PNG로 저장' 후, 이미지/PDF 편집 탭의 '이미지/서명 선택'으로 불러와 찍을 수 있습니다." />
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- 미리보기(흰 종이) -->
+                    <Border Background="White" CornerRadius="4">
+                        <Image x:Name="StampPreview" Stretch="Uniform" Margin="24"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
 
                 </DockPanel>

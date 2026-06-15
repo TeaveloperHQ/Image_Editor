@@ -405,8 +405,10 @@ public partial class MainWindow : Window
     {
         _stampPath = Path.Combine(Path.GetTempPath(), $"stamp_{Guid.NewGuid():N}.png");
         File.WriteAllBytes(_stampPath, png);
+        using (var ms = new MemoryStream(png))
+            StampPreview.Source = new Bitmap(ms);
         StampReady.IsChecked = true;
-        StampInfo.Text = "도장이 만들어졌습니다. PNG로 저장하거나 이미지에 찍으세요.";
+        StampInfo.Text = "도장이 만들어졌습니다. 'PNG로 저장'으로 내보낸 뒤 편집 탭에서 쓰세요.";
         SetStatus("도장 생성 완료");
     }
 
@@ -417,18 +419,6 @@ public partial class MainWindow : Window
         if (output is null) return;
         try { File.Copy(_stampPath, output, overwrite: true); SetStatus($"저장: {output}"); }
         catch (Exception ex) { SetError(ex.Message); }
-    }
-
-    private void OnUseStamp(object? sender, RoutedEventArgs e)
-    {
-        if (_stampPath is null || !File.Exists(_stampPath)) { SetError("먼저 도장을 만드세요."); return; }
-        if (_session is null) { SetError("도장을 찍을 이미지를 먼저 불러오세요."); return; }
-        _overlayPath = _stampPath;
-        OverlayName.Text = "(도장)";
-        OverlayW.Text = "0";
-        OverlayH.Text = "0";
-        ModeImage.IsChecked = true; // 그림 모드로 전환 → 클릭해서 찍기
-        SetStatus("미리보기를 클릭해 도장을 찍으세요.");
     }
 
     private void RefreshPreview()
