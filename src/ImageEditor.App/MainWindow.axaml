@@ -27,7 +27,7 @@
             <TextBlock x:Name="StatusText" Text="준비됨" Foreground="#CCCCCC" />
         </Border>
 
-        <TabControl Margin="8">
+        <TabControl x:Name="MainTabs" Margin="8">
 
             <!-- ========== 이미지 크기 변경 ========== -->
             <TabItem Header="이미지 크기 변경">
@@ -163,7 +163,7 @@
             </TabItem>
 
             <!-- ========== 이미지 편집 ========== -->
-            <TabItem Header="이미지 편집">
+            <TabItem x:Name="ImageEditTab" Header="이미지 편집">
                 <DockPanel Margin="8">
 
                     <!-- 우측 도구 패널 -->
@@ -317,7 +317,7 @@
             </TabItem>
 
             <!-- ========== PDF 편집 ========== -->
-            <TabItem Header="PDF 편집">
+            <TabItem x:Name="PdfEditTab" Header="PDF 편집">
                 <DockPanel Margin="8">
 
                     <ScrollViewer DockPanel.Dock="Right" Width="270" Margin="8,0,0,0"

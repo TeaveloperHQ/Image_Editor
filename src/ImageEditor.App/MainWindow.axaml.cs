@@ -61,6 +61,19 @@ public partial class MainWindow : Window
         InitializeComponent();
         MergeList.ItemsSource = _mergeFiles;
         ReloadFontCombo(null);
+        KeyDown += OnGlobalKeyDown;
+    }
+
+    private void OnGlobalKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || (e.Key != Key.Delete && e.Key != Key.Back)) return;
+        // 텍스트 입력 중에는 글자 삭제로 동작하도록 가로채지 않음
+        if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox) return;
+
+        var removed = MainTabs.SelectedItem == PdfEditTab ? DeleteSelectedPdfOverlay()
+                    : MainTabs.SelectedItem == ImageEditTab ? DeleteSelectedImageOverlay()
+                    : false;
+        if (removed) e.Handled = true;
     }
 
     // ---------- 공통 헬퍼 ----------
@@ -540,7 +553,14 @@ public partial class MainWindow : Window
         CropRect.Height = Math.Abs(p.Y - _cropStart.Y);
     }
 
-    private void OnCanvasReleased(object? sender, PointerReleasedEventArgs e) => _dragging = false;
+    private void OnCanvasReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (!_dragging) return;
+        _dragging = false;
+        // 드래그가 거의 없으면(단순 클릭) 선택 영역을 초기화 — 일반 편집기처럼
+        if (CropRect.Width < 3 || CropRect.Height < 3)
+            CropRect.IsVisible = false;
+    }
 
     // ----- 오버레이 객체(이미지 편집) -----
 
@@ -624,9 +644,15 @@ public partial class MainWindow : Window
 
     private void OnDeleteImageOverlay(object? sender, RoutedEventArgs e)
     {
-        if (_selectedImageOverlay is null) { SetError("삭제할 객체를 선택하세요."); return; }
+        if (!DeleteSelectedImageOverlay()) SetError("삭제할 객체를 선택하세요.");
+    }
+
+    private bool DeleteSelectedImageOverlay()
+    {
+        if (_selectedImageOverlay is null) return false;
         EditCanvas.Children.Remove(_selectedImageOverlay);
         _selectedImageOverlay = null;
+        return true;
     }
 
     // ---------- PDF 편집 ----------
@@ -792,8 +818,14 @@ public partial class MainWindow : Window
 
     private void OnDeletePdfOverlay(object? sender, RoutedEventArgs e)
     {
-        if (_selectedPdfOverlay is null) { SetError("삭제할 객체를 선택하세요."); return; }
+        if (!DeleteSelectedPdfOverlay()) SetError("삭제할 객체를 선택하세요.");
+    }
+
+    private bool DeleteSelectedPdfOverlay()
+    {
+        if (_selectedPdfOverlay is null) return false;
         PdfCanvas.Children.Remove(_selectedPdfOverlay);
         _selectedPdfOverlay = null;
+        return true;
     }
 }
