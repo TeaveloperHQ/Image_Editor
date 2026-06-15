@@ -62,12 +62,12 @@ public static class StampMaker
             else
                 ctx.Draw(pen, new RectangularPolygon(inset, inset, sizePx - 2 * inset, sizePx - 2 * inset));
 
-            // 글자: 왼쪽 열부터 위→아래로 채움(직접 인쇄용이라 좌우 반전 안 함).
+            // 글자: 가로 우선(왼→오로 한 줄, 그다음 줄 내림)으로 채움.
             // 잉크 중심을 셀 중심에 맞춤.
             var k = 0;
-            for (var col = 0; col < cols && k < n; col++)
+            for (var row = 0; row < rows && k < n; row++)
             {
-                for (var row = 0; row < rows && k < n; row++)
+                for (var col = 0; col < cols && k < n; col++)
                 {
                     var cx = left + (col + 0.5f) * cellW;
                     var cy = top + (row + 0.5f) * cellH;
